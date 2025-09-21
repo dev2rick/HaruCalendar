@@ -55,30 +55,30 @@ public enum HaruCalendarSelectionMode: CaseIterable {
 
 // MARK: - Cell State
 
-public struct HaruCalendarCellState {
-    public let date: Date
-    public let monthPosition: HaruCalendarMonthPosition
-    public let isSelected: Bool
-    public let isToday: Bool
-    public let isWeekend: Bool
-    public let isPlaceholder: Bool
-
-    public init(
-        date: Date,
-        monthPosition: HaruCalendarMonthPosition,
-        isSelected: Bool = false,
-        isToday: Bool = false,
-        isWeekend: Bool = false,
-        isPlaceholder: Bool = false
-    ) {
-        self.date = date
-        self.monthPosition = monthPosition
-        self.isSelected = isSelected
-        self.isToday = isToday
-        self.isWeekend = isWeekend
-        self.isPlaceholder = isPlaceholder
-    }
-}
+//public struct HaruCalendarCellState {
+//    public let date: Date
+//    public let monthPosition: HaruCalendarMonthPosition
+//    public let isSelected: Bool
+//    public let isToday: Bool
+//    public let isWeekend: Bool
+//    public let isPlaceholder: Bool
+//
+//    public init(
+//        date: Date,
+//        monthPosition: HaruCalendarMonthPosition,
+//        isSelected: Bool = false,
+//        isToday: Bool = false,
+//        isWeekend: Bool = false,
+//        isPlaceholder: Bool = false
+//    ) {
+//        self.date = date
+//        self.monthPosition = monthPosition
+//        self.isSelected = isSelected
+//        self.isToday = isToday
+//        self.isWeekend = isWeekend
+//        self.isPlaceholder = isPlaceholder
+//    }
+//}
 
 // MARK: - Event Info
 

@@ -181,7 +181,7 @@ public class HaruCalendarTransitionCoordinator: NSObject {
         let duration = HaruCalendarConstants.defaultBounceAnimationDuration * 2
         
         // Notify delegate about bounds change
-        calendar.delegate?.calendar?(calendar, boundingRectWillChange: attributes.targetBounds, animated: true)
+        calendar.delegate?.calendar(calendar, boundingRectWillChange: attributes.targetBounds, animated: true)
         
         animator = UIViewPropertyAnimator(duration: TimeInterval(duration), dampingRatio: 0.8) {
             calendar.scope = attributes.targetScope
@@ -202,7 +202,7 @@ public class HaruCalendarTransitionCoordinator: NSObject {
         guard let calendar = calendar else { return }
         
         // Notify delegate about bounds change
-        calendar.delegate?.calendar?(calendar, boundingRectWillChange: attributes.targetBounds, animated: false)
+        calendar.delegate?.calendar(calendar, boundingRectWillChange: attributes.targetBounds, animated: false)
         
         calendar.scope = attributes.targetScope
         calendar.frame = attributes.targetBounds

@@ -24,16 +24,10 @@ public class HaruCalendar: UIView {
     }
     
     /// The object that acts as the delegate of the calendar.
-    public weak var delegate: HaruCalendarDelegate? {
-        get { return delegationHelper.delegate }
-        set { delegationHelper.delegate = newValue }
-    }
+    public weak var delegate: HaruCalendarDelegate?
     
     /// The object that acts as the data source of the calendar.
-    public weak var dataSource: HaruCalendarDataSource? {
-        get { return delegationHelper.dataSource }
-        set { delegationHelper.dataSource = newValue }
-    }
+    public weak var dataSource: HaruCalendarDataSource?
     
     /// A special mark will be put on 'today' of the calendar.
     public var today: Date? {
@@ -205,9 +199,6 @@ public class HaruCalendar: UIView {
     internal let headerView: HaruCalendarHeaderView
     internal let weekdayView: HaruCalendarWeekdayView
     
-    // Delegation
-    private let delegationHelper: HaruCalendarDelegationHelper
-    
     // State management
     private var needsAdjustingViewFrame: Bool = false
     private var needsRequestingBoundingDates: Bool = false
@@ -230,7 +221,6 @@ public class HaruCalendar: UIView {
         self.transitionCoordinator = HaruCalendarTransitionCoordinator()
         
         // Initialize delegation helper
-        self.delegationHelper = HaruCalendarDelegationHelper()
         
         super.init(frame: frame)
         calculator.calendar = self
@@ -400,7 +390,7 @@ public class HaruCalendar: UIView {
         }
         
         configureAppearance()
-        delegate?.calendar?(self, didDeselect: date, at: .current)
+        delegate?.calendar(self, didDeselect: date, at: .current)
     }
     
     /// Changes the current page of the calendar.
@@ -531,7 +521,7 @@ private extension HaruCalendar {
               isDateInRange(date) else { return }
         
         // Check if should select
-        if let shouldSelect = delegate?.calendar?(self, shouldSelect: date, at: monthPosition),
+        if let shouldSelect = delegate?.calendar(self, shouldSelect: date, at: monthPosition),
            !shouldSelect {
             return
         }
@@ -550,7 +540,7 @@ private extension HaruCalendar {
         }
         
         configureAppearance()
-        delegate?.calendar?(self, didSelect: date, at: monthPosition)
+        delegate?.calendar(self, didSelect: date, at: monthPosition)
     }
     
     func isPageInRange(_ page: Date) -> Bool {
@@ -583,7 +573,7 @@ extension HaruCalendar: UICollectionViewDataSource {
         let monthPosition = calculator.monthPosition(for: indexPath)
         
         // Ask data source for custom cell
-        if let customCell = dataSource?.calendar?(self, cellFor: date, at: monthPosition) {
+        if let customCell = dataSource?.calendar(self, cellFor: date, at: monthPosition) {
             return customCell
         }
         
@@ -614,13 +604,13 @@ extension HaruCalendar: UICollectionViewDataSource {
         cell.titleLabel.text = gregorian.component(.day, from: date).description
         
         // Set subtitle from data source
-        cell.subtitle = dataSource?.calendar?(self, subtitleFor: date)
+        cell.subtitle = dataSource?.calendar(self, subtitleFor: date)
         
         // Set image from data source
-        cell.image = dataSource?.calendar?(self, imageFor: date)
+        cell.image = dataSource?.calendar(self, imageFor: date)
         
         // Set number of events
-        cell.numberOfEvents = dataSource?.calendar?(self, numberOfEventsFor: date) ?? 0
+        cell.numberOfEvents = dataSource?.calendar(self, numberOfEventsFor: date) ?? 0
         
         // Configure appearance
         cell.configureAppearance()
@@ -641,7 +631,7 @@ extension HaruCalendar: UICollectionViewDelegate {
             return false
         }
         
-        return delegate?.calendar?(self, shouldSelect: date, at: monthPosition) ?? true
+        return delegate?.calendar(self, shouldSelect: date, at: monthPosition) ?? true
     }
     
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
@@ -661,7 +651,7 @@ extension HaruCalendar: UICollectionViewDelegate {
               let date = calculator.date(for: indexPath) else { return false }
         
         let monthPosition = calculator.monthPosition(for: indexPath)
-        return delegate?.calendar?(self, shouldDeselect: date, at: monthPosition) ?? true
+        return delegate?.calendar(self, shouldDeselect: date, at: monthPosition) ?? true
     }
     
     public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
@@ -677,7 +667,7 @@ extension HaruCalendar: UICollectionViewDelegate {
               let date = calculator.date(for: indexPath) else { return }
         
         let monthPosition = calculator.monthPosition(for: indexPath)
-        delegate?.calendar?(self, willDisplay: calendarCell, for: date, at: monthPosition)
+        delegate?.calendar(self, willDisplay: calendarCell, for: date, at: monthPosition)
     }
     
     public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
@@ -685,7 +675,7 @@ extension HaruCalendar: UICollectionViewDelegate {
         
         if let date = calculator.page(for: currentSection) {
             currentPage = date
-            delegate?.calendarCurrentPageDidChange?(self)
+            delegate?.calendarCurrentPageDidChange(self)
         }
     }
     
@@ -694,7 +684,7 @@ extension HaruCalendar: UICollectionViewDelegate {
         
         if let date = calculator.page(for: currentSection) {
             currentPage = date
-            delegate?.calendarCurrentPageDidChange?(self)
+            delegate?.calendarCurrentPageDidChange(self)
         }
     }
 }

@@ -694,6 +694,6 @@ extension HaruCalendar: UICollectionViewDelegate {
 extension HaruCalendar: HaruCalendarCollectionViewInternalDelegate {
     
     func collectionViewDidFinishLayoutSubviews(_ collectionView: HaruCalendarCollectionView) {
-        headerView.setScrollOffset(CGFloat(collectionView.currentSection), animated: false)
+        scrollToPage(for: currentPage, animated: false)
     }
 }

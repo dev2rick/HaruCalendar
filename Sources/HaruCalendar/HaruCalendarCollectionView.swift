@@ -53,11 +53,6 @@ public class HaruCalendarCollectionView: UICollectionView {
         commonInit()
     }
     
-    public init(frame: CGRect) {
-        super.init(frame: frame, collectionViewLayout: UICollectionViewFlowLayout())
-        commonInit()
-    }
-    
     public required init?(coder: NSCoder) {
         assertionFailure("Interface Builder is not supported. Use init(frame:collectionViewLayout:) instead.")
         return nil
@@ -73,14 +68,10 @@ public class HaruCalendarCollectionView: UICollectionView {
         contentInset = .zero
         
         // Disable prefetching for performance
-        if #available(iOS 10.0, *) {
-            isPrefetchingEnabled = false
-        }
+        isPrefetchingEnabled = false
         
         // Disable automatic content inset adjustment
-        if #available(iOS 11.0, *) {
-            contentInsetAdjustmentBehavior = .never
-        }
+        contentInsetAdjustmentBehavior = .never
         
         // Calendar-specific optimizations
         showsVerticalScrollIndicator = false
@@ -110,7 +101,6 @@ public class HaruCalendarCollectionView: UICollectionView {
         // Optimize cell for calendar use
         cell.layer.shouldRasterize = false
         cell.clipsToBounds = true
-        
         return cell
     }
     
@@ -134,7 +124,8 @@ extension HaruCalendarCollectionView {
     
     /// Scrolls to specific month or week section with animation
     public func scrollToSection(_ section: Int, animated: Bool) {
-        guard let layout = collectionViewLayout as? UICollectionViewFlowLayout else { return }
+        
+        guard let layout = collectionViewLayout as? HaruCalendarCollectionViewLayout else { return }
         
         var contentOffset: CGPoint
         
@@ -151,7 +142,7 @@ extension HaruCalendarCollectionView {
     
     /// Gets the currently visible section
     public var currentSection: Int {
-        guard let layout = collectionViewLayout as? UICollectionViewFlowLayout else { return 0 }
+        guard let layout = collectionViewLayout as? HaruCalendarCollectionViewLayout else { return 0 }
         
         if layout.scrollDirection == .horizontal {
             return max(0, Int(round(contentOffset.x / bounds.width)))

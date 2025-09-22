@@ -38,11 +38,8 @@ public struct HaruCalendarPlaceholderType: OptionSet {
 
 // MARK: - Month Position
 
-@objc public enum HaruCalendarMonthPosition: Int, CaseIterable {
-    case previous = 0
-    case current = 1
-    case next = 2
-    case notFound = 3
+public enum HaruCalendarMonthPosition: CaseIterable {
+    case previous, current, next, notFound
 }
 
 // MARK: - Selection Mode

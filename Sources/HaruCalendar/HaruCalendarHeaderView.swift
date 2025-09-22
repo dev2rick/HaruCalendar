@@ -15,7 +15,7 @@ public class HaruCalendarHeaderView: UIView {
     // MARK: - Properties
     
     weak var collectionView: HaruCalendarCollectionView?
-    weak var collectionViewLayout: HaruCalendarHeaderLayout?
+    
     weak var calendar: HaruCalendar? {
         didSet {
             configureAppearance()
@@ -25,7 +25,7 @@ public class HaruCalendarHeaderView: UIView {
     public var scrollDirection: UICollectionView.ScrollDirection = .horizontal {
         didSet {
             if scrollDirection != oldValue {
-                collectionViewLayout?.scrollDirection = scrollDirection
+                headerLayout.scrollDirection = scrollDirection
                 setNeedsLayout()
             }
         }
@@ -61,7 +61,6 @@ public class HaruCalendarHeaderView: UIView {
         
         super.init(frame: frame)
         
-        self.collectionViewLayout = headerLayout
         setupCollectionView()
     }
     
@@ -147,8 +146,8 @@ public class HaruCalendarHeaderView: UIView {
     }
     
     private func configureCell(_ cell: HaruCalendarHeaderCell, at indexPath: IndexPath) {
-        guard let calendar = calendar,
-              let appearance = calendar.appearance else { return }
+        guard let calendar = calendar else { return }
+        let appearance = calendar.appearance
         
         // Configure cell appearance
         cell.titleLabel.font = appearance.headerTitleFont
@@ -304,12 +303,11 @@ public class HaruCalendarHeaderCell: UICollectionViewCell {
         super.layoutSubviews()
         
         guard let header = header,
-              let calendar = header.calendar,
-              let appearance = calendar.appearance else {
+              let calendar = header.calendar else {
             titleLabel.frame = contentView.bounds
             return
         }
-        
+        let appearance = calendar.appearance
         // Apply header title offset
         let offset = appearance.headerTitleOffset
         titleLabel.frame = contentView.bounds.offsetBy(dx: offset.x, dy: offset.y)

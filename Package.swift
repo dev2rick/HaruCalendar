@@ -4,6 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "HaruCalendar",
+    platforms: [.iOS(.v13)],
     products: [
         .library(name: "HaruCalendar", targets: ["HaruCalendar"]),
     ],

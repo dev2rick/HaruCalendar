@@ -62,6 +62,7 @@ public extension HaruCalendarConstants {
     
     static let standardLineColor = UIColor.lightGray.withAlphaComponent(0.30)
     static let standardSeparatorColor = UIColor.lightGray.withAlphaComponent(0.60)
+    static let defaultSeparatorColor = UIColor.lightGray.withAlphaComponent(0.60)
 }
 
 // MARK: - Device Detection

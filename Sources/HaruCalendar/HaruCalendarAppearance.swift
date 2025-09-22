@@ -10,13 +10,13 @@ import UIKit
 
 // MARK: - Cell State
 
-public enum HaruCalendarCellState: CaseIterable {
-    case normal
-    case selected
-    case placeholder
-    case disabled
-    case today
-    case weekend
+@objc public enum HaruCalendarCellState: Int, CaseIterable {
+    case normal = 0
+    case selected = 1
+    case placeholder = 2
+    case disabled = 3
+    case today = 4
+    case weekend = 5
     
     public static let todaySelected: [HaruCalendarCellState] = [.today, .selected]
 }

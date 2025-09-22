@@ -10,9 +10,9 @@ import Foundation
 
 // MARK: - Calendar Scope
 
-public enum HaruCalendarScope: CaseIterable {
-    case month
-    case week
+@objc public enum HaruCalendarScope: Int, CaseIterable {
+    case month = 0
+    case week = 1
 }
 
 // MARK: - Scroll Direction
@@ -38,11 +38,11 @@ public struct HaruCalendarPlaceholderType: OptionSet {
 
 // MARK: - Month Position
 
-public enum HaruCalendarMonthPosition: CaseIterable {
-    case previous
-    case current
-    case next
-    case notFound
+@objc public enum HaruCalendarMonthPosition: Int, CaseIterable {
+    case previous = 0
+    case current = 1
+    case next = 2
+    case notFound = 3
 }
 
 // MARK: - Selection Mode

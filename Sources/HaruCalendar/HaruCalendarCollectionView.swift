@@ -33,7 +33,7 @@ public class HaruCalendarCollectionView: UICollectionView {
     /// Always returns zero to prevent automatic content inset adjustments
     public override var contentInset: UIEdgeInsets {
         get { return .zero }
-        set { 
+        set {
             super.contentInset = .zero
             // Handle top inset adjustment
             if newValue.top > 0 {
@@ -101,27 +101,6 @@ public class HaruCalendarCollectionView: UICollectionView {
         internalDelegate?.collectionViewDidFinishLayoutSubviews(self)
     }
     
-    // MARK: - Scroll Behavior
-    
-    /// Prevents automatic content offset adjustments by UIScrollView internals
-    public override func setContentOffset(_ contentOffset: CGPoint, animated: Bool) {
-        // Allow controlled content offset changes
-        super.setContentOffset(contentOffset, animated: animated)
-    }
-    
-    /// Ensures content inset is always zero
-    public override func setContentInset(_ contentInset: UIEdgeInsets) {
-        super.setContentInset(.zero)
-        
-        // Handle legacy top inset adjustment
-        if contentInset.top > 0 {
-            let currentOffset = self.contentOffset
-            self.contentOffset = CGPoint(
-                x: currentOffset.x,
-                y: currentOffset.y + contentInset.top
-            )
-        }
-    }
     
     // MARK: - Performance Optimizations
     
@@ -154,7 +133,7 @@ public class HaruCalendarCollectionView: UICollectionView {
 extension HaruCalendarCollectionView {
     
     /// Scrolls to specific month or week section with animation
-    func scrollToSection(_ section: Int, animated: Bool) {
+    public func scrollToSection(_ section: Int, animated: Bool) {
         guard let layout = collectionViewLayout as? UICollectionViewFlowLayout else { return }
         
         var contentOffset: CGPoint
@@ -171,7 +150,7 @@ extension HaruCalendarCollectionView {
     }
     
     /// Gets the currently visible section
-    var currentSection: Int {
+    public var currentSection: Int {
         guard let layout = collectionViewLayout as? UICollectionViewFlowLayout else { return 0 }
         
         if layout.scrollDirection == .horizontal {

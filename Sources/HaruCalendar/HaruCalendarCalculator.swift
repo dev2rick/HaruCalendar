@@ -42,7 +42,7 @@ public class HaruCalendarCalculator: NSObject {
     // MARK: - Computed Properties
     
     private var gregorian: Calendar {
-        return calendar?.calendar ?? Calendar.current
+        return calendar?.gregorian ?? Calendar.current
     }
     
     private var minimumDate: Date {
@@ -66,9 +66,8 @@ public class HaruCalendarCalculator: NSObject {
     
     // MARK: - Initialization
     
-    public init(calendar: HaruCalendar) {
+    override public init() {
         super.init()
-        self.calendar = calendar
         
         NotificationCenter.default.addObserver(
             self,
@@ -366,9 +365,5 @@ private extension Calendar {
     
     func firstDayOfMonth(for date: Date) -> Date? {
         return dateInterval(of: .month, for: date)?.start
-    }
-    
-    func numberOfDaysInMonth(for date: Date) -> Int {
-        return range(of: .day, in: .month, for: date)?.count ?? 0
     }
 }

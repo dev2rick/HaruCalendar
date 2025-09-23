@@ -39,7 +39,7 @@ public class HaruCalendar: UIView {
     }
     
     /// The current page of calendar
-    public var currentPage: Date = Date() {
+    public var currentPage: Date {
         didSet {
             if currentPage != oldValue {
                 scrollToPage(for: currentPage, animated: false)
@@ -186,7 +186,7 @@ public class HaruCalendar: UIView {
     
     // MARK: - Internal Properties
     
-    internal var gregorian: Calendar = Calendar.current
+    internal var gregorian: Calendar
     internal let formatter: DateFormatter = DateFormatter()
     internal let calculator: HaruCalendarCalculator
     internal let transitionCoordinator: HaruCalendarTransitionCoordinator
@@ -219,8 +219,8 @@ public class HaruCalendar: UIView {
         
         self.calculator = HaruCalendarCalculator()
         self.transitionCoordinator = HaruCalendarTransitionCoordinator()
-        
-        // Initialize delegation helper
+        self.gregorian = Calendar.current
+        self.currentPage = gregorian.firstDayOfMonth(for: Date()) ?? Date()
         
         super.init(frame: frame)
         calculator.calendar = self
@@ -340,8 +340,10 @@ public class HaruCalendar: UIView {
         
         // Set up date range
         let calendar = Calendar.current
-        minimumDate = calendar.date(byAdding: .year, value: -10, to: Date()) ?? Date.distantPast
-        maximumDate = calendar.date(byAdding: .year, value: 10, to: Date()) ?? Date.distantFuture
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        minimumDate = formatter.date(from: "1970-01-01") ?? .distantPast
+        maximumDate = formatter.date(from: "2099-12-31") ?? .distantFuture
         
         // Initial setup
         invalidateDateTools()
@@ -379,18 +381,6 @@ public class HaruCalendar: UIView {
     public func select(_ date: Date?, scrollToDate: Bool) {
         guard let date = date else { return }
         selectDate(date, scrollToDate: scrollToDate, at: .current)
-    }
-    
-    /// Deselects a given date of the calendar.
-    public func deselect(_ date: Date) {
-        guard selectedDates.contains(date) else { return }
-        
-        if let index = selectedDates.firstIndex(of: date) {
-            selectedDates.remove(at: index)
-        }
-        
-        configureAppearance()
-        delegate?.calendar(self, didDeselect: date, at: .current)
     }
     
     /// Changes the current page of the calendar.
@@ -456,6 +446,9 @@ public class HaruCalendar: UIView {
                 calendarCell.configureAppearance()
             }
         }
+        
+        let index = calculator.indexPath(for: currentPage)
+        collectionView.scrollToSection(index?.section ?? 0, animated: false)
     }
     
     internal func invalidateDateTools() {
@@ -517,8 +510,7 @@ private extension HaruCalendar {
     }
     
     func selectDate(_ date: Date, scrollToDate: Bool, at monthPosition: HaruCalendarMonthPosition) {
-        guard allowsSelection,
-              isDateInRange(date) else { return }
+        guard allowsSelection, isDateInRange(date) else { return }
         
         // Check if should select
         if let shouldSelect = delegate?.calendar(self, shouldSelect: date, at: monthPosition),
@@ -622,8 +614,7 @@ extension HaruCalendar: UICollectionViewDataSource {
 extension HaruCalendar: UICollectionViewDelegate {
     
     public func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
-        guard allowsSelection,
-              let date = calculator.date(for: indexPath) else { return false }
+        guard allowsSelection, let date = calculator.date(for: indexPath) else { return false }
         
         let monthPosition = calculator.monthPosition(for: indexPath)
         
@@ -647,32 +638,34 @@ extension HaruCalendar: UICollectionViewDelegate {
     }
     
     public func collectionView(_ collectionView: UICollectionView, shouldDeselectItemAt indexPath: IndexPath) -> Bool {
-        guard allowsMultipleSelection,
-              let date = calculator.date(for: indexPath) else { return false }
+        guard allowsMultipleSelection, let date = calculator.date(for: indexPath) else { return false }
         
         let monthPosition = calculator.monthPosition(for: indexPath)
         return delegate?.calendar(self, shouldDeselect: date, at: monthPosition) ?? true
     }
     
     public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
-        guard allowsMultipleSelection,
-              let date = calculator.date(for: indexPath) else { return }
+        guard allowsMultipleSelection, let date = calculator.date(for: indexPath) else { return }
         
+        
+        guard selectedDates.contains(date) else { return }
+        
+        if let index = selectedDates.firstIndex(of: date) {
+            selectedDates.remove(at: index)
+        }
         let monthPosition = calculator.monthPosition(for: indexPath)
-        deselect(date)
+        configureAppearance()
+        delegate?.calendar(self, didDeselect: date, at: monthPosition)
     }
     
     public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-        guard let calendarCell = cell as? HaruCalendarCell,
-              let date = calculator.date(for: indexPath) else { return }
-        
+        guard let calendarCell = cell as? HaruCalendarCell, let date = calculator.date(for: indexPath) else { return }
         let monthPosition = calculator.monthPosition(for: indexPath)
         delegate?.calendar(self, willDisplay: calendarCell, for: date, at: monthPosition)
     }
     
     public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         let currentSection = collectionView.currentSection
-        
         if let date = calculator.page(for: currentSection) {
             currentPage = date
             delegate?.calendarCurrentPageDidChange(self)
@@ -681,7 +674,6 @@ extension HaruCalendar: UICollectionViewDelegate {
     
     public func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
         let currentSection = collectionView.currentSection
-        
         if let date = calculator.page(for: currentSection) {
             currentPage = date
             delegate?.calendarCurrentPageDidChange(self)
@@ -692,8 +684,7 @@ extension HaruCalendar: UICollectionViewDelegate {
 // MARK: - HaruCalendarCollectionViewInternalDelegate
 
 extension HaruCalendar: HaruCalendarCollectionViewInternalDelegate {
-    
     func collectionViewDidFinishLayoutSubviews(_ collectionView: HaruCalendarCollectionView) {
-        scrollToPage(for: currentPage, animated: false)
+        headerView.setScrollOffset(CGFloat(collectionView.currentSection), animated: false)
     }
 }

@@ -358,7 +358,7 @@ public class HaruCalendarCalculator: NSObject {
 
 // MARK: - Date Utilities
 
-private extension Calendar {
+extension Calendar {
     func firstDayOfWeek(for date: Date) -> Date? {
         return dateInterval(of: .weekOfYear, for: date)?.start
     }

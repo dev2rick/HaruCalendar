@@ -92,20 +92,15 @@ public class HaruCalendarHeaderView: UIView {
             forCellWithReuseIdentifier: HaruCalendarHeaderCell.reuseIdentifier
         )
         
-        addSubview(headerCollectionView)
-    }
-    
-    // MARK: - Layout
-    
-    public override func layoutSubviews() {
-        super.layoutSubviews()
+        headerCollectionView.translatesAutoresizingMaskIntoConstraints = false
         
-        headerCollectionView.frame = CGRect(
-            x: 0,
-            y: bounds.height * 0.1,
-            width: bounds.width,
-            height: bounds.height * 0.9
-        )
+        addSubview(headerCollectionView)
+        NSLayoutConstraint.activate([
+            headerCollectionView.topAnchor.constraint(equalTo: topAnchor),
+            headerCollectionView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            headerCollectionView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            headerCollectionView.trailingAnchor.constraint(equalTo: trailingAnchor)
+        ])
     }
     
     // MARK: - Public Methods
@@ -150,8 +145,8 @@ public class HaruCalendarHeaderView: UIView {
         let appearance = calendar.appearance
         
         // Configure cell appearance
-        cell.titleLabel.font = appearance.headerTitleFont
-        cell.titleLabel.textColor = appearance.headerTitleColor
+        cell.titleLabel.font = .systemFont(ofSize: 14)// appearance.headerTitleFont
+        cell.titleLabel.textColor = .label//appearance.headerTitleColor
         cell.titleLabel.textAlignment = appearance.headerTitleAlignment
         
         // Configure date formatter
@@ -246,6 +241,7 @@ extension HaruCalendarHeaderView: UICollectionViewDataSource {
         ) as! HaruCalendarHeaderCell
         
         cell.header = self
+        
         configureCell(cell, at: indexPath)
         
         return cell
@@ -358,7 +354,8 @@ public class HaruCalendarHeaderLayout: UICollectionViewFlowLayout {
         
         guard let collectionView else { return }
         
-        let width: CGFloat = (scrollDirection == .horizontal) ? 0.5 : 1.0 * collectionView.bounds.width
+        let width: CGFloat = ((scrollDirection == .horizontal) ? 0.5 : 1.0) * collectionView.bounds.width
+//        print(collectionView.bounds)
         itemSize = CGSize(
             width: width,
             height: collectionView.bounds.height

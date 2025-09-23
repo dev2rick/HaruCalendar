@@ -323,18 +323,3 @@ public class HaruCalendarCollectionViewLayout: UICollectionViewLayout {
         }
     }
 }
-
-// MARK: - Layout Calculations
-
-private extension HaruCalendarCollectionViewLayout {
-    
-    func calculateRowOffset(_ row: Int, totalRows: Int) -> CGFloat {
-        guard let calendar = calendar else { return 0 }
-        
-        let totalHeight = collectionView?.bounds.height ?? 0
-        let availableHeight = totalHeight - sectionInsets.top - sectionInsets.bottom
-        let rowHeight = availableHeight / CGFloat(totalRows)
-        
-        return sectionInsets.top + CGFloat(row) * rowHeight
-    }
-}

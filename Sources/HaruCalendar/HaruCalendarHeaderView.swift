@@ -145,8 +145,8 @@ public class HaruCalendarHeaderView: UIView {
         let appearance = calendar.appearance
         
         // Configure cell appearance
-        cell.titleLabel.font = .systemFont(ofSize: 14)// appearance.headerTitleFont
-        cell.titleLabel.textColor = .label//appearance.headerTitleColor
+        cell.titleLabel.font = appearance.headerTitleFont
+        cell.titleLabel.textColor = appearance.headerTitleColor
         cell.titleLabel.textAlignment = appearance.headerTitleAlignment
         
         // Configure date formatter
@@ -355,7 +355,7 @@ public class HaruCalendarHeaderLayout: UICollectionViewFlowLayout {
         guard let collectionView else { return }
         
         let width: CGFloat = ((scrollDirection == .horizontal) ? 0.5 : 1.0) * collectionView.bounds.width
-//        print(collectionView.bounds)
+
         itemSize = CGSize(
             width: width,
             height: collectionView.bounds.height

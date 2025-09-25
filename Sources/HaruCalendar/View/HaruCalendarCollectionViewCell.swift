@@ -12,7 +12,7 @@ open class HaruCalendarCollectionViewCell: UICollectionViewCell {
     
     private static let defaultBounceAnimationDuration: CGFloat = 0.15
     
-    private let shapeLayer = CAShapeLayer()
+    let shapeLayer = CAShapeLayer()
     
     private let label: UILabel = {
         let label = UILabel()
@@ -41,7 +41,7 @@ open class HaruCalendarCollectionViewCell: UICollectionViewCell {
         guard let calendar = calendarView?.calendar else { return }
         let day = calendar.component(.day, from: date)
         label.text = "\(day)"
-        
+        shapeLayer.opacity = isSelected ? 1 : 0
         if scope == .month {
             if monthPosition == .current {
                 label.textColor = .label
@@ -53,10 +53,25 @@ open class HaruCalendarCollectionViewCell: UICollectionViewCell {
         }
     }
     
+    open override func prepareForReuse() {
+        super.prepareForReuse()
+        shapeLayer.opacity = 0
+    }
+    
     open override func layoutSubviews() {
         super.layoutSubviews()
         shapeLayer.frame = bounds
-        shapeLayer.cornerRadius = bounds.height / 2
+        let diameter = min(bounds.width, bounds.height)
+        let rect = CGRect(
+            x: (bounds.width - diameter) / 2,
+            y: (bounds.height - diameter) / 2,
+            width: diameter,
+            height: diameter
+        )
+        let path = UIBezierPath(ovalIn: rect)
+        shapeLayer.fillColor = UIColor.yellow.cgColor
+        shapeLayer.path = path.cgPath
+        shapeLayer.opacity = 0
     }
     
     required public init?(coder: NSCoder) {

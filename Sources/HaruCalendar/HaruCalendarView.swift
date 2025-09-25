@@ -9,10 +9,13 @@ import UIKit
 
 public class HaruCalendarView: UIView {
     
+    public weak var delegate: HaruCalendarViewDelegate?
+    
     public var calendar: Calendar = .current
     public private(set) var scope: HaruCalendarScope
     public private(set) var currentPage = Date()
     public private(set) var today = Date()
+    public private(set) var selectedDate: Date?
     public var minimumDate: Date = .distantPast
     public var maximumDate: Date = .distantFuture
     public var rowHeight: CGFloat = 100
@@ -84,6 +87,33 @@ public class HaruCalendarView: UIView {
         weeks.removeAll()
         rowCounts.removeAll()
     }
+    
+    private func isPageInRange(_ page: Date) -> Bool {
+        page >= minimumDate && page <= maximumDate
+    }
+    
+    private func isDateInRange(_ date: Date) -> Bool {
+        calendar.compare(date, to: minimumDate, toGranularity: .day) != .orderedAscending &&
+        calendar.compare(date, to: maximumDate, toGranularity: .day) != .orderedDescending
+    }
+    
+    private func selectDate(_ date: Date, scrollToDate: Bool, at monthPosition: HaruCalendarMonthPosition) {
+        guard isDateInRange(date) else { return }
+        
+        // Check if should select
+        if let shouldSelect = delegate?.calendar(self, shouldSelect: date, at: monthPosition),
+           !shouldSelect {
+            return
+        }
+        
+        selectedDate = date
+        
+        if let section = indexPath(for: currentPage)?.section, scrollToDate {
+            calendarCollectionView.scrollToSection(section, animated: true)
+        }
+        
+        delegate?.calendar(self, didSelect: date, at: monthPosition)
+    }
 }
 
 public extension HaruCalendarView {
@@ -107,7 +137,7 @@ public extension HaruCalendarView {
     }
 }
 
-extension HaruCalendarView: UICollectionViewDelegate, UICollectionViewDataSource {
+extension HaruCalendarView: UICollectionViewDataSource {
     
     public func numberOfSections(in collectionView: UICollectionView) -> Int {
         switch scope {
@@ -131,16 +161,76 @@ extension HaruCalendarView: UICollectionViewDelegate, UICollectionViewDataSource
         ) as! HaruCalendarCollectionViewCell
         
         let monthPosition = monthPosition(for: indexPath)
-        let date = date(for: indexPath)!
+        
         cell.calendarView = self
-        cell.config(from: date, monthPosition: monthPosition, scope: scope)
+        
+        if let date = date(for: indexPath) {
+            cell.isSelected = date == selectedDate
+            cell.config(from: date, monthPosition: monthPosition, scope: scope)
+        }
+        
         return cell
+    }
+}
+
+extension HaruCalendarView: UICollectionViewDelegate {
+    public func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
+        guard let date = date(for: indexPath) else { return false }
+        
+        let monthPosition = monthPosition(for: indexPath)
+        
+        if !isDateInRange(date) {
+            return false
+        }
+        
+        return delegate?.calendar(self, shouldSelect: date, at: monthPosition) ?? true
+    }
+    
+    public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard let date = date(for: indexPath) else { return }
+        
+        let monthPosition = monthPosition(for: indexPath)
+        selectDate(date, scrollToDate: false, at: monthPosition)
+        
+        // Perform selection animation
+        if let cell = collectionView.cellForItem(at: indexPath) as? HaruCalendarCollectionViewCell {
+            cell.isSelected = true
+            cell.performSelecting()
+        }
+    }
+    
+    public func collectionView(_ collectionView: UICollectionView, shouldDeselectItemAt indexPath: IndexPath) -> Bool {
+        guard let date = date(for: indexPath) else { return false }
+        
+        let monthPosition = monthPosition(for: indexPath)
+        return delegate?.calendar(self, shouldDeselect: date, at: monthPosition) ?? true
+    }
+    
+    public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
+        guard let date = date(for: indexPath) else { return }
+        let cell = collectionView.cellForItem(at: indexPath) as? HaruCalendarCollectionViewCell
+        cell?.isSelected = false
+        cell?.shapeLayer.opacity = 0
+        selectedDate = nil
+        let monthPosition = monthPosition(for: indexPath)
+        delegate?.calendar(self, didDeselect: date, at: monthPosition)
+    }
+    
+    public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+        guard
+            let calendarCell = cell as? HaruCalendarCollectionViewCell,
+            let date = date(for: indexPath) else {
+            return
+        }
+        let monthPosition = monthPosition(for: indexPath)
+        delegate?.calendar(self, willDisplay: calendarCell, for: date, at: monthPosition)
     }
     
     public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         let section = calendarCollectionView.currentSection
         if let date = page(for: section) {
             currentPage = date
+            delegate?.calendarCurrentPageDidChange(self)
         }
     }
     
@@ -148,6 +238,7 @@ extension HaruCalendarView: UICollectionViewDelegate, UICollectionViewDataSource
         let section = calendarCollectionView.currentSection
         if let date = page(for: section) {
             currentPage = date
+            delegate?.calendarCurrentPageDidChange(self)
         }
     }
 }

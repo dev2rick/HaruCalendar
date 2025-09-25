@@ -17,7 +17,6 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .white
         
-        
         setupViews()
         setupConstraints()
     }
@@ -29,6 +28,7 @@ class ViewController: UIViewController {
         view.addSubview(scopeToggleControl)
         
         calendarView.translatesAutoresizingMaskIntoConstraints = false
+        calendarView.delegate = self
         view.addSubview(calendarView)
     }
     
@@ -52,4 +52,15 @@ class ViewController: UIViewController {
         let newScope: HaruCalendarScope = sender.selectedSegmentIndex == 0 ? .week : .month
         calendarView.setScope(newScope)
     }
+}
+
+extension ViewController: HaruCalendarViewDelegate {
+    func calendar(_ calendar: HaruCalendarView, didSelect date: Date, at monthPosition: HaruCalendarMonthPosition) {
+        print(date)
+    }
+    
+    func calendarCurrentPageDidChange(_ calendar: HaruCalendarView) {
+        print(calendar.currentPage)
+    }
+    
 }

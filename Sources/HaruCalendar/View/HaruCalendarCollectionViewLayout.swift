@@ -56,6 +56,11 @@ public class HaruCalendarCollectionViewLayout: UICollectionViewLayout {
         numberOfSections = currentSections
         
         // Clear cached attributes when layout changes
+        widths.removeAll()
+        heights.removeAll()
+        lefts.removeAll()
+        tops.removeAll()
+        
         itemAttributes.removeAll()
         
         // Calculate widths and positions for columns (7 days)
@@ -66,15 +71,23 @@ public class HaruCalendarCollectionViewLayout: UICollectionViewLayout {
         lefts = (0 ..< 7).map { CGFloat($0) * itemWidth + sectionInsets.left }
         
         // Calculate heights and positions for rows (6 rows max)
-        let contentHeight = collectionViewSize.height - sectionInsets.top - sectionInsets.bottom
-        let itemHeight = contentHeight / CGFloat(numberOfRows)
+        let itemHeight: CGFloat
+        
+        if let height = calendar.dataSource?.heightForRow(calendar) {
+            itemHeight = height
+        } else {
+            let contentHeight = collectionViewSize.height - sectionInsets.top - sectionInsets.bottom
+            itemHeight = contentHeight / CGFloat(numberOfRows)
+        }
         
         heights = Array(repeating: itemHeight, count: numberOfRows)
         tops = (0 ..< numberOfRows).map { CGFloat($0) * itemHeight + sectionInsets.top }
         
         // Calculate total content size
         let totalWidth = CGFloat(numberOfSections) * collectionViewSize.width
-        contentSize = CGSize(width: totalWidth, height: collectionViewSize.height)
+        let totalHeight = itemHeight * CGFloat(numberOfRows) + sectionInsets.top + sectionInsets.bottom
+        
+        contentSize = CGSize(width: totalWidth, height: totalHeight)
     }
     
     public override var collectionViewContentSize: CGSize {
@@ -82,22 +95,24 @@ public class HaruCalendarCollectionViewLayout: UICollectionViewLayout {
     }
     
     public override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
+        guard let collectionView else { return nil }
         
         var layoutAttributes: [UICollectionViewLayoutAttributes] = []
         
-        // FSCalendar-style horizontal scrolling calculation
-        let startSection = Int(rect.minX / collectionViewSize.width)
-        let endSection = Int(rect.maxX / collectionViewSize.width)
+        let startSection = max(0, Int(rect.minX / collectionViewSize.width))
+        let endSection = min(numberOfSections - 1, Int(rect.maxX / collectionViewSize.width))
         
-        let startColumn = startSection * 7
-        let endColumn = min((endSection + 1) * 7 - 1, numberOfSections * 7 - 1)
-        
-        for column in startColumn ... endColumn {
-            for row in 0 ..< numberOfRows {
-                let section = column / 7
-                let item = (column % 7) + row * 7
-                let indexPath = IndexPath(item: item, section: section)
+        for section in startSection...endSection {
+            
+            let actualItemsInSection = collectionView.numberOfItems(inSection: section)
+            
+            let expectedItems = calendar?.scope == .week ? 7 : 42
+            
+            let itemsToProcess = min(expectedItems, actualItemsInSection)
+            
+            for item in 0 ..< itemsToProcess {
                 
+                let indexPath = IndexPath(item: item, section: section)
                 if let attributes = layoutAttributesForItem(at: indexPath) {
                     layoutAttributes.append(attributes)
                 }
@@ -113,19 +128,9 @@ public class HaruCalendarCollectionViewLayout: UICollectionViewLayout {
             return cachedAttributes
         }
         
-        // Calculate on demand (FSCalendar style)
-        guard indexPath.section < numberOfSections,
-              indexPath.item < 42, // Max items per section (6 rows × 7 days)
-              !widths.isEmpty,
-              !heights.isEmpty else {
-            return nil
-        }
-        
         let column = indexPath.item % 7
         let row = indexPath.item / 7
-        
-        guard row < numberOfRows else { return nil }
-        
+                
         let attributes = UICollectionViewLayoutAttributes(forCellWith: indexPath)
         
         // Calculate frame using FSCalendar-style positioning

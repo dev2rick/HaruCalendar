@@ -9,6 +9,7 @@ import UIKit
 
 public class HaruCalendarView: UIView {
     
+    public weak var dataSource: HaruCalendarViewDataSource?
     public weak var delegate: HaruCalendarViewDelegate?
     
     public var calendar: Calendar = .current
@@ -132,12 +133,49 @@ public extension HaruCalendarView {
     }
     
     func setScope(_ scope: HaruCalendarScope) {
+        guard self.scope != scope else { return }
+        
         self.scope = scope
-        reloadData()
+        
+        // 데이터 재로드 (섹션 수, 아이템 수 업데이트)
+        reloadSections()
+        
+        // IntrinsicContentSize 무효화 (높이 변경)
+        invalidateIntrinsicContentSize()
+        
+        // 애니메이션과 함께 높이 변경
+        UIView.animate(withDuration: 5) { [weak self] in
+            self?.superview?.layoutIfNeeded()
+        } completion: { completed in
+            if completed {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self else { return }
+                    
+                    calendarCollectionView.reloadData()
+                    
+                    if let section = indexPath(for: currentPage)?.section {
+                        calendarCollectionView.scrollToSection(section, animated: false)
+                    }
+                }
+            }
+        }
     }
 }
 
 extension HaruCalendarView: UICollectionViewDataSource {
+    
+    public override var intrinsicContentSize: CGSize {
+        let noIntrinsicMetric = UIView.noIntrinsicMetric
+        
+        if let rowHeight = dataSource?.heightForRow(self) {
+            let numberOfRows: CGFloat = scope == .month ? 6 : 1
+            let totalHeight = rowHeight * numberOfRows
+            
+            return CGSize(width: noIntrinsicMetric, height: totalHeight)
+        } else {
+            return CGSize(width: noIntrinsicMetric, height: noIntrinsicMetric)
+        }
+    }
     
     public func numberOfSections(in collectionView: UICollectionView) -> Int {
         switch scope {

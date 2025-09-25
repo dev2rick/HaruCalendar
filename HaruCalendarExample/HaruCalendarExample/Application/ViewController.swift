@@ -10,13 +10,13 @@ import HaruCalendar
 
 class ViewController: UIViewController {
     
-    let calendarView = HaruCalendar()
+    let calendarView = HaruCalendarView()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .white
         
-        calendarView.delegate = self
+//        calendarView.delegate = self
         
         calendarView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(calendarView)
@@ -29,9 +29,12 @@ class ViewController: UIViewController {
         ])
     }
 }
-
-extension ViewController: HaruCalendarDelegate {
-    func calendar(_ calendar: HaruCalendar, didSelect date: Date, at monthPosition: HaruCalendarMonthPosition) {
-        print("Selected date: \(date)")
-    }
-}
+//
+//extension ViewController: HaruCalendarDelegate {
+//    func calendar(_ calendar: HaruCalendar, didSelect date: Date, at monthPosition: HaruCalendarMonthPosition) {
+//        if monthPosition == .next || monthPosition == .previous {
+//            calendar.setCurrentPage(date, animated: true)
+//        }
+//        print("Selected date: \(date)")
+//    }
+//}

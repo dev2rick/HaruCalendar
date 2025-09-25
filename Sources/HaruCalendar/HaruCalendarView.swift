@@ -137,14 +137,11 @@ public extension HaruCalendarView {
         
         self.scope = scope
         
-        // 데이터 재로드 (섹션 수, 아이템 수 업데이트)
         reloadSections()
         
-        // IntrinsicContentSize 무효화 (높이 변경)
         invalidateIntrinsicContentSize()
         
-        // 애니메이션과 함께 높이 변경
-        UIView.animate(withDuration: 5) { [weak self] in
+        UIView.animate(withDuration: 0.3) { [weak self] in
             self?.superview?.layoutIfNeeded()
         } completion: { completed in
             if completed {

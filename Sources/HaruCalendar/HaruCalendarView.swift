@@ -8,11 +8,14 @@
 import UIKit
 
 public class HaruCalendarView: UIView {
-    public var scope: HaruCalendarScope = .month
+    
     public var calendar: Calendar = .current
-    public var currentPage: Date = Date()
-    public var minimumDate: Date
-    public var maximumDate: Date
+    public private(set) var scope: HaruCalendarScope
+    public private(set) var currentPage = Date()
+    public private(set) var today = Date()
+    public var minimumDate: Date = .distantPast
+    public var maximumDate: Date = .distantFuture
+    public var rowHeight: CGFloat = 100
     
     private(set) var numberOfMonths: Int = 0
     private(set) var numberOfWeeks: Int = 0
@@ -27,32 +30,21 @@ public class HaruCalendarView: UIView {
     var weeks: [Int: Date] = [:]
     var rowCounts: [Date: Int] = [:]
     
-    override init(frame: CGRect) {
+    public init(scope: HaruCalendarScope) {
         self.calendarCollectionViewLayout = HaruCalendarCollectionViewLayout()
         self.calendarCollectionView = HaruCalendarCollectionView(
             frame: .zero,
             collectionViewLayout: calendarCollectionViewLayout
         )
-        self.minimumDate = Date(timeIntervalSince1970: 0) // 1970-01-01
-        self.maximumDate = Date(timeIntervalSince1970: 4102358400) // 2099-12-31
+        self.scope = scope
+        super.init(frame: .zero)
         
-        super.init(frame: frame)
-        
-        numberOfMonths = calculateNumberOfMonths()
-        numberOfWeeks = calculateNumberOfWeeks()
         calendarCollectionViewLayout.calendar = self
         
         setupView()
         setupLayout()
         
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            calendarCollectionView.reloadData()
-            
-            let index = indexPath(for: currentPage)
-            calendarCollectionView.scrollToSection(index?.section ?? 0, animated: false)
-        }
-        
+        reloadData()
     }
     
     required init?(coder: NSCoder) {
@@ -62,6 +54,7 @@ public class HaruCalendarView: UIView {
     private func setupView() {
         calendarCollectionView.delegate = self
         calendarCollectionView.dataSource = self
+        
         calendarCollectionView.register(
             HaruCalendarCollectionViewCell.self,
             forCellWithReuseIdentifier: HaruCalendarCollectionViewCell.identifier
@@ -80,10 +73,8 @@ public class HaruCalendarView: UIView {
             calendarCollectionView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
     }
-}
-
-public extension HaruCalendarView {
-    func reloadSections() {
+    
+    private func reloadSections() {
         numberOfMonths = calculateNumberOfMonths()
         numberOfWeeks = calculateNumberOfWeeks()
         
@@ -95,14 +86,41 @@ public extension HaruCalendarView {
     }
 }
 
+public extension HaruCalendarView {
+    
+    func reloadData() {
+        reloadSections()
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            calendarCollectionView.reloadData()
+            
+            if let section = indexPath(for: currentPage)?.section {
+                
+                calendarCollectionView.scrollToSection(section, animated: false)
+            }
+        }
+    }
+    
+    func setScope(_ scope: HaruCalendarScope) {
+        self.scope = scope
+        reloadData()
+    }
+}
+
 extension HaruCalendarView: UICollectionViewDelegate, UICollectionViewDataSource {
     
     public func numberOfSections(in collectionView: UICollectionView) -> Int {
-        return numberOfMonths
+        switch scope {
+        case .month: numberOfMonths
+        case .week: numberOfWeeks
+        }
     }
     
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 42 // 6 rows × 7 days = 42 cells maximum
+        switch scope {
+        case .month: 42 // 6 rows × 7 days = 42 cells maximum
+        case .week: 7
+        }
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -115,7 +133,21 @@ extension HaruCalendarView: UICollectionViewDelegate, UICollectionViewDataSource
         let monthPosition = monthPosition(for: indexPath)
         let date = date(for: indexPath)!
         cell.calendarView = self
-        cell.config(from: date, monthPosition: monthPosition)
+        cell.config(from: date, monthPosition: monthPosition, scope: scope)
         return cell
+    }
+    
+    public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        let section = calendarCollectionView.currentSection
+        if let date = page(for: section) {
+            currentPage = date
+        }
+    }
+    
+    public func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
+        let section = calendarCollectionView.currentSection
+        if let date = page(for: section) {
+            currentPage = date
+        }
     }
 }

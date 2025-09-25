@@ -37,15 +37,19 @@ open class HaruCalendarCollectionViewCell: UICollectionViewCell {
         ])
     }
     
-    public func config(from date: Date, monthPosition: HaruCalendarMonthPosition) {
+    public func config(from date: Date, monthPosition: HaruCalendarMonthPosition, scope: HaruCalendarScope) {
         guard let calendar = calendarView?.calendar else { return }
         let day = calendar.component(.day, from: date)
         label.text = "\(day)"
         
-        if monthPosition == .current {
-            label.textColor = .label
+        if scope == .month {
+            if monthPosition == .current {
+                label.textColor = .label
+            } else {
+                label.textColor = .secondaryLabel
+            }
         } else {
-            label.textColor = .secondaryLabel
+            label.textColor = .label
         }
     }
     

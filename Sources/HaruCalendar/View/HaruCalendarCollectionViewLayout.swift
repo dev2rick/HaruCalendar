@@ -24,7 +24,13 @@ public class HaruCalendarCollectionViewLayout: UICollectionViewLayout {
     private var contentSize: CGSize = .zero
     private var collectionViewSize: CGSize = .zero
     private var numberOfSections: Int = 0
-    private let numberOfRows: Int = 6
+    private var numberOfRows: Int {
+        guard let scope = calendar?.scope else { return 0 }
+        switch scope {
+        case .month: return 6
+        case .week: return 1
+        }
+    }
     
     // Cached layout attributes
     private var itemAttributes: [IndexPath: UICollectionViewLayoutAttributes] = [:]
@@ -51,13 +57,6 @@ public class HaruCalendarCollectionViewLayout: UICollectionViewLayout {
         
         // Clear cached attributes when layout changes
         itemAttributes.removeAll()
-        
-        // Calculate basic layout metrics (but don't create all attributes)
-        calculateLayoutMetrics()
-    }
-    
-    private func calculateLayoutMetrics() {
-        guard let collectionView = collectionView else { return }
         
         // Calculate widths and positions for columns (7 days)
         let contentWidth = collectionViewSize.width - sectionInsets.left - sectionInsets.right

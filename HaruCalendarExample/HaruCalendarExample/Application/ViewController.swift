@@ -61,13 +61,13 @@ class ViewController: UIViewController {
             calendarView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             calendarView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             
-//            scrollView.topAnchor.constraint(equalTo: calendarView.bottomAnchor),
-//            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-//            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-//            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-//            
-//            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
-//            contentView.heightAnchor.constraint(equalToConstant: 1000)
+            scrollView.topAnchor.constraint(equalTo: calendarView.bottomAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            contentView.heightAnchor.constraint(equalToConstant: 1000)
         ])
     }
     
@@ -87,8 +87,4 @@ extension ViewController: HaruCalendarViewDelegate, HaruCalendarViewDataSource {
     func calendarCurrentPageDidChange(_ calendar: HaruCalendarView) {
         print(calendar.currentPage)
     }
-    
-//    func heightForRow(_ calendar: HaruCalendarView) -> CGFloat? {
-//        nil
-//    }
 }

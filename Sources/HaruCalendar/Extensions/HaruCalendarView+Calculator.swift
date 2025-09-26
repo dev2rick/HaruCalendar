@@ -45,7 +45,7 @@ public extension HaruCalendarView {
         }
     }
     
-    func indexPath(for date: Date, at monthPosition: HaruCalendarMonthPosition = .current) -> IndexPath? {
+    func indexPath(for date: Date, at monthPosition: HaruCalendarMonthPosition = .current, scope: HaruCalendarScope) -> IndexPath? {
         var item = 0
         var section = 0
         
@@ -221,4 +221,27 @@ extension Calendar {
     func firstDayOfMonth(for date: Date) -> Date? {
         return dateInterval(of: .month, for: date)?.start
     }
+    
+    func middleDayOfWeek(_ week: Date) -> Date? {
+        
+        let weekdayComponents = dateComponents([.weekday], from: week)
+        guard let weekday = weekdayComponents.weekday else { return nil }
+        
+        var componentsToSubtract = DateComponents()
+        componentsToSubtract.day = -(weekday - firstWeekday) + 3
+        
+        // Fix https://github.com/WenchaoD/FSCalendar/issues/1100 and https://github.com/WenchaoD/FSCalendar/issues/1102
+        // If firstWeekday is not 1, and weekday is less than firstWeekday, the middleDayOfWeek will be the middle day of next week
+        if weekday < firstWeekday {
+            componentsToSubtract.day = (componentsToSubtract.day ?? 0) - 7
+        }
+        
+        guard let middleDayOfWeek = date(byAdding: componentsToSubtract, to: week) else { return nil }
+        
+        let components = dateComponents([.year, .month, .day, .hour], from: middleDayOfWeek)
+        let normalizedDate = date(from: components)
+        
+        return normalizedDate
+    }
+
 }

@@ -102,6 +102,9 @@ public class HaruCalendarCollectionViewLayout: UICollectionViewLayout {
         let startSection = max(0, Int(rect.minX / collectionViewSize.width))
         let endSection = min(numberOfSections - 1, Int(rect.maxX / collectionViewSize.width))
         
+        if endSection < startSection {
+            return nil
+        }
         for section in startSection...endSection {
             
             let actualItemsInSection = collectionView.numberOfItems(inSection: section)
@@ -135,9 +138,23 @@ public class HaruCalendarCollectionViewLayout: UICollectionViewLayout {
         
         // Calculate frame using FSCalendar-style positioning
         let x = lefts[column] + CGFloat(indexPath.section) * collectionViewSize.width
-        let y = tops[row]
+        let y: CGFloat
+        
+        if tops.count > row {
+            y = tops[row]
+        } else {
+            y = tops[0]
+        }
+//        let y = tops[row]
         let width = widths[column]
-        let height = heights[row]
+        
+        let height: CGFloat
+        if heights.count > row {
+            height = heights[row]
+        } else {
+            height = heights[0]
+        }
+//        let height = heights[row]
         
         attributes.frame = CGRect(x: x, y: y, width: width, height: height)
         
@@ -145,9 +162,5 @@ public class HaruCalendarCollectionViewLayout: UICollectionViewLayout {
         itemAttributes[indexPath] = attributes
         
         return attributes
-    }
-    
-    public override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
-        return newBounds != collectionView?.bounds
     }
 }

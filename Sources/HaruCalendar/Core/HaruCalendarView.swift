@@ -24,8 +24,10 @@ public class HaruCalendarView: UIView {
     private(set) var numberOfMonths: Int = 0
     private(set) var numberOfWeeks: Int = 0
     
-    private let calendarCollectionView: HaruCalendarCollectionView
-    private let calendarCollectionViewLayout: HaruCalendarCollectionViewLayout
+    var collectionViewTopAnchor: NSLayoutConstraint?
+    private var coordinator: HaruCalendarTransitionCoordinator!
+    internal let calendarCollectionView: HaruCalendarCollectionView
+    internal let calendarCollectionViewLayout: HaruCalendarCollectionViewLayout
     
     // Caches
     var months: [Int: Date] = [:]
@@ -42,9 +44,9 @@ public class HaruCalendarView: UIView {
         )
         self.scope = scope
         super.init(frame: .zero)
-        
+        coordinator = HaruCalendarTransitionCoordinator(calendar: self)
         calendarCollectionViewLayout.calendar = self
-        
+        clipsToBounds = true
         setupView()
         setupLayout()
         
@@ -70,15 +72,18 @@ public class HaruCalendarView: UIView {
         
         addSubview(calendarCollectionView)
         
+        let collectionViewTopAnchor = calendarCollectionView.topAnchor.constraint(equalTo: topAnchor)
+        self.collectionViewTopAnchor = collectionViewTopAnchor
+        
         NSLayoutConstraint.activate([
-            calendarCollectionView.topAnchor.constraint(equalTo: topAnchor),
+            collectionViewTopAnchor,
             calendarCollectionView.leadingAnchor.constraint(equalTo: leadingAnchor),
             calendarCollectionView.trailingAnchor.constraint(equalTo: trailingAnchor),
             calendarCollectionView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
     }
     
-    private func reloadSections() {
+    internal func reloadSections() {
         numberOfMonths = calculateNumberOfMonths()
         numberOfWeeks = calculateNumberOfWeeks()
         
@@ -109,7 +114,7 @@ public class HaruCalendarView: UIView {
         
         selectedDate = date
         
-        if let section = indexPath(for: currentPage)?.section, scrollToDate {
+        if let section = indexPath(for: currentPage, scope: scope)?.section, scrollToDate {
             calendarCollectionView.scrollToSection(section, animated: true)
         }
         
@@ -125,7 +130,7 @@ public extension HaruCalendarView {
             guard let self else { return }
             calendarCollectionView.reloadData()
             
-            if let section = indexPath(for: currentPage)?.section {
+            if let section = indexPath(for: currentPage, scope: scope)?.section {
                 
                 calendarCollectionView.scrollToSection(section, animated: false)
             }
@@ -135,26 +140,24 @@ public extension HaruCalendarView {
     func setScope(_ scope: HaruCalendarScope) {
         guard self.scope != scope else { return }
         
+        let fromScope = self.scope
+        let toScope = scope
         self.scope = scope
         
-        reloadSections()
-        
-        invalidateIntrinsicContentSize()
-        
-        UIView.animate(withDuration: 0.3) { [weak self] in
-            self?.superview?.layoutIfNeeded()
-        } completion: { completed in
-            if completed {
-                DispatchQueue.main.async { [weak self] in
-                    guard let self else { return }
-                    
-                    calendarCollectionView.reloadData()
-                    
-                    if let section = indexPath(for: currentPage)?.section {
-                        calendarCollectionView.scrollToSection(section, animated: false)
-                    }
-                }
-            }
+        coordinator.performTransition(
+            fromScope: fromScope,
+            toScope: toScope,
+            animated: true
+        )
+    }
+    
+    func sizeThatFits(_ size: CGSize, scope: HaruCalendarScope) -> CGSize {
+        if let rowHeight = dataSource?.heightForRow(self) {
+            let numberOfRows: CGFloat = scope == .month ? 6 : 1
+            let totalHeight = rowHeight * numberOfRows
+            return CGSize(width: size.width, height: totalHeight)
+        } else {
+            return size
         }
     }
 }

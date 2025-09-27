@@ -50,7 +50,9 @@ public class HaruCalendarView: UIView {
         setupView()
         setupLayout()
         
-        reloadData()
+        DispatchQueue.main.async { [weak self] in
+            self?.reloadCalendar()
+        }
     }
     
     required init?(coder: NSCoder) {
@@ -124,17 +126,18 @@ public class HaruCalendarView: UIView {
 
 public extension HaruCalendarView {
     
-    func reloadData() {
+    func reloadCalendar(for page: Date? = nil) {
         reloadSections()
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            calendarCollectionView.reloadData()
-            
-            if let section = indexPath(for: currentPage, scope: scope)?.section {
-                
-                calendarCollectionView.scrollToSection(section, animated: false)
-            }
+        calendarCollectionView.reloadData()
+        let date = page ?? currentPage
+        scrollTo(date: date, animated: false)
+    }
+    
+    func scrollTo(date: Date, animated: Bool) {
+        guard let section = indexPath(for: date, scope: scope)?.section else {
+            return
         }
+        calendarCollectionView.scrollToSection(section, animated: animated)
     }
     
     func setScope(_ scope: HaruCalendarScope) {

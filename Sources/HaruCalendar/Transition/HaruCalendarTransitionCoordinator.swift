@@ -8,7 +8,7 @@
 import UIKit
 
 enum FSCalendarTransitionState {
-    case idle, changing, finished
+    case idle, changing
 }
 
 @MainActor
@@ -28,21 +28,17 @@ final class HaruCalendarTransitionCoordinator {
         state = .changing
         let attributes = createTransitionAttributesTargetingScope(sourceScope: fromScope,targetScope: toScope)
         if toScope == .month {
-            calendar.reloadData()
-//            calendar.calendarCollectionView.reloadData()
             
+            calendar.reloadCalendar(for: attributes.targetPage)
+            calendar.superview?.layoutIfNeeded()
             
             let offset = calculateOffsetForProgress(attributes: attributes, progress: 0)
-            print(offset)
+            
             calendar.collectionViewTopAnchor?.constant = offset
             calendar.layoutIfNeeded()
         }
         
         performTransition(attributes: attributes, fromProgress: 0, toProgress: 1, animated: animated)
-    }
-    
-    func performBoundingRectTransitionFromMonth(fromMonth: Date, toMonth: Date, duration: CGFloat) {
-        
     }
     
     func performTransition(attributes: HaruCalendarTransitionAttributes, fromProgress: CGFloat, toProgress: CGFloat, animated: Bool) {
@@ -56,6 +52,10 @@ final class HaruCalendarTransitionCoordinator {
         } completion: { [weak self] _ in
             self?.performTransitionCompletion(from: attributes)
         }
+    }
+    
+    func performBoundingRectTransitionFromMonth(fromMonth: Date, toMonth: Date, duration: CGFloat) {
+        
     }
     
     func calculateOffsetForProgress(attributes: HaruCalendarTransitionAttributes, progress: CGFloat) -> CGFloat {
@@ -75,25 +75,27 @@ final class HaruCalendarTransitionCoordinator {
 extension HaruCalendarTransitionCoordinator {
     func createTransitionAttributesTargetingScope(sourceScope: HaruCalendarScope, targetScope: HaruCalendarScope) -> HaruCalendarTransitionAttributes {
         // get focusedDate
-        var candidates: [Date] = []
+        let focusedDate: Date?
         
         if let selectedDate = calendar.selectedDate {
-            candidates.append(selectedDate)
+            focusedDate = selectedDate
+        } else {
+            var candidates: [Date] = []
+            
+            candidates.append(calendar.today)
+            
+            if targetScope == .week {
+                candidates.append(calendar.currentPage)
+            } else if let date = calendar.calendar.date(byAdding: .day, value: 3, to: calendar.currentPage) {
+                candidates.append(date)
+            }
+            
+            focusedDate = candidates.filter {
+                let indexPath = calendar.indexPath(for: $0, scope: sourceScope)
+                let currentSection = calendar.indexPath(for: calendar.currentPage, scope: sourceScope)?.section
+                return indexPath?.section == currentSection
+            }.first
         }
-        
-        candidates.append(calendar.today)
-        
-        if targetScope == .week {
-            candidates.append(calendar.currentPage)
-        } else if let date = calendar.calendar.date(byAdding: .day, value: 3, to: calendar.currentPage) {
-            candidates.append(date)
-        }
-        
-        let focusedDate = candidates.filter {
-            let indexPath = calendar.indexPath(for: $0, scope: sourceScope)
-            let currentSection = calendar.indexPath(for: calendar.currentPage, scope: sourceScope)?.section
-            return indexPath?.section == currentSection
-        }.first
         
         // get focusedRow
         let focusedRow: Int
@@ -140,12 +142,10 @@ extension HaruCalendarTransitionCoordinator {
   
     func performTransitionCompletion(from attributes: HaruCalendarTransitionAttributes) {
         
-        if attributes.targetScope == .week {
-            calendar.reloadData()
-//            calendar.calendarCollectionView.reloadData()
-        }
-        
         calendar.collectionViewTopAnchor?.constant = 0
         calendar.superview?.layoutIfNeeded()
+        if attributes.targetScope == .week {
+            calendar.reloadCalendar(for: attributes.targetPage)
+        }
     }
 }

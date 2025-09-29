@@ -44,7 +44,6 @@ open class HaruCalendarCollectionViewCell: UICollectionViewCell {
         guard let calendar = calendarView?.calendar else { return }
         let day = calendar.component(.day, from: date)
         label.text = "\(day)"
-        shapeLayer.opacity = isSelected ? 1 : 0
         
         if scope == .month {
             if monthPosition == .current {
@@ -55,28 +54,28 @@ open class HaruCalendarCollectionViewCell: UICollectionViewCell {
         } else {
             label.textColor = .label
         }
+        
+        configAppearance()
     }
     
     public func configAppearance() {
-        if isSelected {
-            print(date)
-        }
+        
         shapeLayer.opacity = isSelected ? 1 : 0
     }
     
     open override func prepareForReuse() {
         super.prepareForReuse()
-        self.date = nil
         CATransaction.setDisableActions(true)
-        
+        self.date = nil
+        shapeLayer.opacity = 0
         calendarView?.layer.removeAnimation(forKey: "opacity")
     }
-    
     
     open override func layoutSubviews() {
         super.layoutSubviews()
         shapeLayer.frame = bounds
-        let diameter = min(bounds.width, bounds.height)
+        var diameter = min(bounds.width, bounds.height)
+        diameter = diameter * 0.8
         let rect = CGRect(
             x: (bounds.width - diameter) / 2,
             y: (bounds.height - diameter) / 2,
@@ -86,7 +85,6 @@ open class HaruCalendarCollectionViewCell: UICollectionViewCell {
         let path = UIBezierPath(ovalIn: rect)
         shapeLayer.fillColor = UIColor.green.cgColor
         shapeLayer.path = path.cgPath
-        shapeLayer.opacity = 0
     }
     
     required public init?(coder: NSCoder) {

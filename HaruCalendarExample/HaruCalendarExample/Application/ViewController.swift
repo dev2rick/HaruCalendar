@@ -60,6 +60,7 @@ class ViewController: UIViewController {
             calendarView.topAnchor.constraint(equalTo: scopeToggleControl.bottomAnchor, constant: 16),
             calendarView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             calendarView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+//            calendarView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             
             scrollView.topAnchor.constraint(equalTo: calendarView.bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),

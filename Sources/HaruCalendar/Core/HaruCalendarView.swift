@@ -129,6 +129,7 @@ public extension HaruCalendarView {
     func reloadCalendar(for page: Date? = nil) {
         reloadSections()
         calendarCollectionView.reloadData()
+        
         let date = page ?? currentPage
         scrollTo(date: date, animated: false)
     }
@@ -137,11 +138,12 @@ public extension HaruCalendarView {
         guard let section = indexPath(for: date, scope: scope)?.section else {
             return
         }
+        
         calendarCollectionView.scrollToSection(section, animated: animated)
     }
     
     func setScope(_ scope: HaruCalendarScope) {
-        guard self.scope != scope else { return }
+        guard coordinator.state == .idle, self.scope != scope else { return }
         
         let fromScope = self.scope
         let toScope = scope
@@ -234,10 +236,9 @@ extension HaruCalendarView: UICollectionViewDelegate {
         selectDate(date, scrollToDate: false, at: monthPosition)
         
         // Perform selection animation
-        if let cell = collectionView.cellForItem(at: indexPath) as? HaruCalendarCollectionViewCell {
-            cell.isSelected = true
-            cell.performSelecting()
-        }
+        let cell = collectionView.cellForItem(at: indexPath) as? HaruCalendarCollectionViewCell
+        cell?.isSelected = true
+        cell?.performSelecting()
     }
     
     public func collectionView(_ collectionView: UICollectionView, shouldDeselectItemAt indexPath: IndexPath) -> Bool {
@@ -251,10 +252,10 @@ extension HaruCalendarView: UICollectionViewDelegate {
         guard let date = date(for: indexPath) else { return }
         let cell = collectionView.cellForItem(at: indexPath) as? HaruCalendarCollectionViewCell
         cell?.isSelected = false
-        cell?.shapeLayer.opacity = 0
         selectedDate = nil
         let monthPosition = monthPosition(for: indexPath)
         delegate?.calendar(self, didDeselect: date, at: monthPosition)
+        cell?.configAppearance()
     }
     
     public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {

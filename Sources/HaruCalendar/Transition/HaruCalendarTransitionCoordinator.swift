@@ -28,14 +28,7 @@ final class HaruCalendarTransitionCoordinator {
         state = .changing
         let attributes = createTransitionAttributesTargetingScope(sourceScope: fromScope,targetScope: toScope)
         if toScope == .month {
-            
-            calendar.reloadCalendar(for: attributes.targetPage)
-            calendar.superview?.layoutIfNeeded()
-            
-            let offset = calculateOffsetForProgress(attributes: attributes, progress: 0)
-            
-            calendar.collectionViewTopAnchor?.constant = offset
-            calendar.layoutIfNeeded()
+            prepareWeekToMonthTransition(from: attributes)
         }
         
         performTransition(attributes: attributes, fromProgress: 0, toProgress: 1, animated: animated)
@@ -141,11 +134,25 @@ extension HaruCalendarTransitionCoordinator {
     }
   
     func performTransitionCompletion(from attributes: HaruCalendarTransitionAttributes) {
-        
         calendar.collectionViewTopAnchor?.constant = 0
         calendar.superview?.layoutIfNeeded()
-        if attributes.targetScope == .week {
+        
+        if attributes.targetScope == .week {   
             calendar.reloadCalendar(for: attributes.targetPage)
         }
+        state = .idle
+    }
+    
+    func prepareWeekToMonthTransition(from attributes: HaruCalendarTransitionAttributes) {
+        calendar.reloadCalendar(for: attributes.targetPage)
+        CATransaction.begin()
+        CATransaction.setDisableActions(false)
+        calendar.superview?.layoutIfNeeded()
+        
+        let offset = calculateOffsetForProgress(attributes: attributes, progress: 0)
+        
+        calendar.collectionViewTopAnchor?.constant = offset
+        calendar.layoutIfNeeded()
+        CATransaction.commit()
     }
 }

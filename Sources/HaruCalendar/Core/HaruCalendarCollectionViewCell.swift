@@ -8,7 +8,9 @@
 import UIKit
 
 open class HaruCalendarCollectionViewCell: UICollectionViewCell {
+    
     weak var calendarView: HaruCalendarView?
+    var date: Date?
     
     private static let defaultBounceAnimationDuration: CGFloat = 0.15
     
@@ -25,7 +27,7 @@ open class HaruCalendarCollectionViewCell: UICollectionViewCell {
     public override init(frame: CGRect) {
         super.init(frame: frame)
         
-        layer.addSublayer(shapeLayer)
+        contentView.layer.addSublayer(shapeLayer)
         
         label.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(label)
@@ -38,10 +40,12 @@ open class HaruCalendarCollectionViewCell: UICollectionViewCell {
     }
     
     public func config(from date: Date, monthPosition: HaruCalendarMonthPosition, scope: HaruCalendarScope) {
+        self.date = date
         guard let calendar = calendarView?.calendar else { return }
         let day = calendar.component(.day, from: date)
         label.text = "\(day)"
         shapeLayer.opacity = isSelected ? 1 : 0
+        
         if scope == .month {
             if monthPosition == .current {
                 label.textColor = .label
@@ -53,10 +57,21 @@ open class HaruCalendarCollectionViewCell: UICollectionViewCell {
         }
     }
     
+    public func configAppearance() {
+        if isSelected {
+            print(date)
+        }
+        shapeLayer.opacity = isSelected ? 1 : 0
+    }
+    
     open override func prepareForReuse() {
         super.prepareForReuse()
-        shapeLayer.opacity = 0
+        self.date = nil
+        CATransaction.setDisableActions(true)
+        
+        calendarView?.layer.removeAnimation(forKey: "opacity")
     }
+    
     
     open override func layoutSubviews() {
         super.layoutSubviews()
@@ -69,7 +84,7 @@ open class HaruCalendarCollectionViewCell: UICollectionViewCell {
             height: diameter
         )
         let path = UIBezierPath(ovalIn: rect)
-        shapeLayer.fillColor = UIColor.yellow.cgColor
+        shapeLayer.fillColor = UIColor.green.cgColor
         shapeLayer.path = path.cgPath
         shapeLayer.opacity = 0
     }

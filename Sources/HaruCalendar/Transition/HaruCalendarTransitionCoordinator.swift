@@ -40,7 +40,7 @@ final class HaruCalendarTransitionCoordinator {
         calendar.collectionViewTopAnchor?.constant = offset
         calendar.invalidateIntrinsicContentSize()
         
-        UIView.animate(withDuration: 5, delay: 0, options: .curveEaseInOut) { [weak self] in
+        UIView.animate(withDuration: 1, delay: 0.1, options: .curveEaseInOut) { [weak self] in
             self?.calendar.superview?.layoutIfNeeded()
         } completion: { [weak self] _ in
             self?.performTransitionCompletion(from: attributes)
@@ -150,10 +150,15 @@ extension HaruCalendarTransitionCoordinator {
         calendar.reloadCalendar(for: attributes.targetPage)
         calendar.layoutIfNeeded()
         
-        let offset = calculateOffsetForProgress(attributes: attributes, progress: 0)
-        
-        calendar.collectionViewTopAnchor?.constant = offset
+        CATransaction.setDisableActions(true)
+        let totalHeight = calendar.calendarCollectionViewLayout.collectionViewContentSize.height
+        calendar.collectionViewTopAnchor?.constant = -totalHeight
         calendar.layoutIfNeeded()
+        CATransaction.setDisableActions(false)
+        
+        let offset = calculateOffsetForProgress(attributes: attributes, progress: 0)
+        calendar.collectionViewTopAnchor?.constant = offset
+        
         CATransaction.commit()
     }
 }

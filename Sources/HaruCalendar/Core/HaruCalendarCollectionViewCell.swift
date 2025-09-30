@@ -59,7 +59,6 @@ open class HaruCalendarCollectionViewCell: UICollectionViewCell {
     }
     
     public func configAppearance() {
-        
         shapeLayer.opacity = isSelected ? 1 : 0
     }
     

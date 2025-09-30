@@ -62,6 +62,7 @@ public class HaruCalendarView: UIView {
     private func setupView() {
         calendarCollectionView.delegate = self
         calendarCollectionView.dataSource = self
+        calendarCollectionView.internalDelegate = self
         
         calendarCollectionView.register(
             HaruCalendarCollectionViewCell.self,
@@ -282,5 +283,15 @@ extension HaruCalendarView: UICollectionViewDelegate {
             currentPage = date
             delegate?.calendarCurrentPageDidChange(self)
         }
+    }
+}
+
+extension HaruCalendarView: HaruCalendarCollectionViewInternalDelegate {
+    func collectionViewDidFinishLayoutSubviews(_ collectionView: HaruCalendarCollectionView) {
+        collectionView.visibleCells.forEach {
+            let cell = $0 as? HaruCalendarCollectionViewCell
+            cell?.configAppearance()
+        }
+        print(collectionView.visibleCells.count)
     }
 }

@@ -209,7 +209,14 @@ extension HaruCalendarView: UICollectionViewDataSource {
         cell.calendarView = self
         
         if let date = date(for: indexPath) {
+            
             cell.isSelected = date == selectedDate
+            if cell.isSelected {
+                collectionView.selectItem(at: indexPath, animated: false, scrollPosition: [])
+            } else {
+                collectionView.deselectItem(at: indexPath, animated: false)
+            }
+            
             cell.config(from: date, monthPosition: monthPosition, scope: scope)
         }
         
@@ -288,10 +295,8 @@ extension HaruCalendarView: UICollectionViewDelegate {
 
 extension HaruCalendarView: HaruCalendarCollectionViewInternalDelegate {
     func collectionViewDidFinishLayoutSubviews(_ collectionView: HaruCalendarCollectionView) {
-        collectionView.visibleCells.forEach {
-            let cell = $0 as? HaruCalendarCollectionViewCell
-            cell?.configAppearance()
-        }
-        print(collectionView.visibleCells.count)
+        collectionView.visibleCells
+            .map { $0 as? HaruCalendarCollectionViewCell }
+            .forEach { $0?.configAppearance() }
     }
 }

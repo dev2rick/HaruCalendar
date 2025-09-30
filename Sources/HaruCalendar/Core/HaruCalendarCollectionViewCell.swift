@@ -59,7 +59,7 @@ open class HaruCalendarCollectionViewCell: UICollectionViewCell {
     }
     
     public func configAppearance() {
-        shapeLayer.opacity = isSelected ? 1 : 0
+        shapeLayer.opacity = isSelected ? 1 : 0        
     }
     
     open override func prepareForReuse() {
@@ -113,7 +113,6 @@ extension HaruCalendarCollectionViewCell {
         animationGroup.animations = [zoomOut, zoomIn]
         
         shapeLayer.add(animationGroup, forKey: "bounce")
-//        configureAppearance()
     }
 }
 

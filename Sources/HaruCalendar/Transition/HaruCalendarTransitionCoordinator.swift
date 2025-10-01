@@ -114,9 +114,8 @@ extension HaruCalendarTransitionCoordinator: UIGestureRecognizerDelegate {
         
         translation = min(translation, maxTranslation)
         translation = max(0, translation)
-        let progress = translation / maxTranslation
-        performAlphaAnimationWithProgress(progress: progress)
-        performPathAnimationWithProgress(progress: progress)
+        
+        performPathAnimationWithProgress(progress: translation / maxTranslation)
     }
     
     func scopeTransitionDidEnd(_ panGesture: UIPanGestureRecognizer) {
@@ -140,10 +139,6 @@ extension HaruCalendarTransitionCoordinator {
         }
     }
     
-    func performBoundingRectTransitionFromMonth(fromMonth: Date, toMonth: Date, duration: CGFloat) {
-        
-    }
-    
     func calculateOffsetForProgress(attributes: HaruCalendarTransitionAttributes, progress: CGFloat) -> CGFloat {
         guard
             let focusedDate = attributes.focusedDate,
@@ -155,10 +150,6 @@ extension HaruCalendarTransitionCoordinator {
         let ratio = attributes.targetScope == .week ? progress : (1 - progress)
         let offset = (-frame.origin.y + calendar.calendarCollectionViewLayout.sectionInsets.top) * ratio
         return offset
-    }
-    
-    func performAlphaAnimationWithProgress(progress: CGFloat) {
-        
     }
     
     func performPathAnimationWithProgress(progress: CGFloat) {
@@ -177,28 +168,20 @@ extension HaruCalendarTransitionCoordinator {
 extension HaruCalendarTransitionCoordinator {
     func createTransitionAttributesTargetingScope(sourceScope: HaruCalendarScope, targetScope: HaruCalendarScope) -> HaruCalendarTransitionAttributes {
         // get focusedDate
-        let focusedDate: Date?
         
+        var candidates: [Date] = []
         if let selectedDate = calendar.selectedDate {
-            focusedDate = selectedDate
-        } else {
-            var candidates: [Date] = []
-            
-            candidates.append(calendar.today)
-            
-            if targetScope == .week {
-                candidates.append(calendar.currentPage)
-            } else if let date = calendar.calendar.date(byAdding: .day, value: 3, to: calendar.currentPage) {
-                candidates.append(date)
-            }
-            
-            focusedDate = candidates.filter {
-                let indexPath = calendar.indexPath(for: $0, scope: sourceScope)
-                let currentSection = calendar.indexPath(for: calendar.currentPage, scope: sourceScope)?.section
-                return indexPath?.section == currentSection
-            }.first
+            candidates.append(selectedDate)
         }
         
+        candidates.append(contentsOf: [calendar.today, calendar.currentPage])
+        let scope = targetScope == .week ? sourceScope : targetScope
+        
+        let focusedDate = candidates.first {
+            let indexPath = calendar.indexPath(for: $0, scope: scope)
+            let currentSection = calendar.indexPath(for: calendar.currentPage, scope: scope)?.section
+            return indexPath?.section == currentSection
+        }
         // get focusedRow
         let focusedRow: Int
         if let focusedDate, let indexPath = calendar.indexPath(for: focusedDate, scope: .month) {

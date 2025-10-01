@@ -12,11 +12,19 @@ enum FSCalendarTransitionState {
 }
 
 @MainActor
-final class HaruCalendarTransitionCoordinator {
+final class HaruCalendarTransitionCoordinator: NSObject {
     var state: FSCalendarTransitionState = .idle
     var cachedMonthSize: CGSize?
     var representingScope: HaruCalendarScope?
     var attributes: HaruCalendarTransitionAttributes?
+    
+    lazy var panGestureRecognizer: UIPanGestureRecognizer = {
+        let recognizer = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture))
+        recognizer.delegate = self
+        recognizer.minimumNumberOfTouches = 1
+        recognizer.maximumNumberOfTouches = 2
+        return recognizer
+    }()
     
     let calendar: HaruCalendarView
     
@@ -24,23 +32,108 @@ final class HaruCalendarTransitionCoordinator {
         self.calendar = calendar
     }
     
-    func performTransition(fromScope: HaruCalendarScope, toScope: HaruCalendarScope, animated: Bool) {
+    public func performTransition(fromScope: HaruCalendarScope, toScope: HaruCalendarScope, animated: Bool) {
         state = .changing
         let attributes = createTransitionAttributesTargetingScope(sourceScope: fromScope,targetScope: toScope)
         if toScope == .month {
             prepareWeekToMonthTransition(from: attributes)
         }
         
-        performTransition(attributes: attributes, fromProgress: 0, toProgress: 1, animated: animated)
+        performTransition(attributes: attributes, toProgress: 1, animated: animated)
+    }
+}
+
+extension HaruCalendarTransitionCoordinator: UIGestureRecognizerDelegate {
+    
+    func setReferenceScrollView(_ scrollView: UIScrollView) {
+        guard scrollView.superview == calendar.superview else {
+            fatalError("ScrollView must be a same subview of the calendar view")
+        }
+        scrollView.superview?.addGestureRecognizer(panGestureRecognizer)
+        scrollView.panGestureRecognizer.require(toFail: panGestureRecognizer)
     }
     
-    func performTransition(attributes: HaruCalendarTransitionAttributes, fromProgress: CGFloat, toProgress: CGFloat, animated: Bool) {
+    @objc
+    func handlePanGesture(_ gestureRecognizer: UIPanGestureRecognizer) {
+        let state = gestureRecognizer.state
+        switch state {
+        case .began: scopeTransitionDidBegin(gestureRecognizer)
+        case .changed: scopeTransitionDidUpdate(gestureRecognizer)
+        case .ended, .cancelled, .failed: scopeTransitionDidEnd(gestureRecognizer)
+        default: break
+        }
+    }
+    
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard let gestureRecognizer = gestureRecognizer as? UIPanGestureRecognizer else { return true }
+        guard state == .idle else { return false }
+        let velocity = gestureRecognizer.velocity(in: gestureRecognizer.view)
         
+        var shouldStart: Bool
+        if calendar.scope == .week {
+            shouldStart = velocity.y >= 0
+        } else {
+            shouldStart = velocity.y <= 0
+        }
+        
+        if !shouldStart { return false }
+        shouldStart = abs(velocity.x) < abs(velocity.y)
+        if shouldStart {
+            calendar.calendarCollectionView.panGestureRecognizer.isEnabled = false
+            calendar.calendarCollectionView.panGestureRecognizer.isEnabled = true
+        }
+        return shouldStart
+    }
+    
+    func scopeTransitionDidBegin(_ panGesture: UIPanGestureRecognizer) {
+        guard state == .idle else { return }
+        let velocity = panGesture.velocity(in: panGesture.view)
+        
+        if calendar.scope == .month && velocity.y >= 0 {
+            return
+        }
+        if calendar.scope == .week && velocity.y <= 0 {
+            return
+        }
+        state = .changing
+        
+        let target: HaruCalendarScope = calendar.scope == .month ? .week : .month
+        calendar.scope = target
+        attributes = createTransitionAttributesTargetingScope(sourceScope: calendar.scope, targetScope: target)
+        if target == .month, let attributes {
+            prepareWeekToMonthTransition(from: attributes)
+        }
+    }
+    
+    func scopeTransitionDidUpdate(_ panGesture: UIPanGestureRecognizer) {
+        
+        guard let attributes, state == .changing else { return }
+        var translation = abs(panGesture.translation(in: panGesture.view).y)
+        
+        let maxTranslation = abs(attributes.sourceBounds.height - attributes.targetBounds.height)
+        
+        translation = min(translation, maxTranslation)
+        translation = max(0, translation)
+        let progress = translation / maxTranslation
+        performAlphaAnimationWithProgress(progress: progress)
+        performPathAnimationWithProgress(progress: progress)
+    }
+    
+    func scopeTransitionDidEnd(_ panGesture: UIPanGestureRecognizer) {
+        guard let attributes, state == .changing else { return }
+        calendar.transitionHeight = nil
+        performTransition(attributes: attributes, toProgress: 1, animated: true)
+    }
+}
+
+extension HaruCalendarTransitionCoordinator {
+    
+    func performTransition(attributes: HaruCalendarTransitionAttributes, toProgress: CGFloat, animated: Bool) {
         let offset = calculateOffsetForProgress(attributes: attributes, progress: toProgress)
         calendar.collectionViewTopAnchor?.constant = offset
         calendar.invalidateIntrinsicContentSize()
         
-        UIView.animate(withDuration: 1, delay: 0.1, options: .curveEaseInOut) { [weak self] in
+        UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseInOut) { [weak self] in
             self?.calendar.superview?.layoutIfNeeded()
         } completion: { [weak self] _ in
             self?.performTransitionCompletion(from: attributes)
@@ -62,6 +155,22 @@ final class HaruCalendarTransitionCoordinator {
         let ratio = attributes.targetScope == .week ? progress : (1 - progress)
         let offset = (-frame.origin.y + calendar.calendarCollectionViewLayout.sectionInsets.top) * ratio
         return offset
+    }
+    
+    func performAlphaAnimationWithProgress(progress: CGFloat) {
+        
+    }
+    
+    func performPathAnimationWithProgress(progress: CGFloat) {
+        guard let attributes else { return }
+        let sourceHeight = attributes.sourceBounds.height
+        let targetHeight = attributes.targetBounds.height
+        let currentHeight = sourceHeight - (sourceHeight - targetHeight) * progress
+        let currentBounds = CGRect(x: 0, y: 0, width: attributes.targetBounds.width, height: currentHeight)
+        
+        let offset = calculateOffsetForProgress(attributes: attributes, progress: progress)
+        calendar.collectionViewTopAnchor?.constant = offset
+        calendar.transitionHeight = currentHeight
     }
 }
 

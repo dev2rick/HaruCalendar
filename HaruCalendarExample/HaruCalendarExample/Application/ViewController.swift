@@ -46,6 +46,7 @@ class ViewController: UIViewController {
         contentView.addSubview(label)
         
         label.text = "Hello, world!"
+        calendarView.setReferenceScrollView(scrollView)
     }
     
     private func setupConstraints() {
@@ -75,7 +76,6 @@ class ViewController: UIViewController {
     @objc private func scopeChanged(_ sender: UISegmentedControl) {
         let newScope: HaruCalendarScope = sender.selectedSegmentIndex == 0 ? .week : .month
         
-        // 애니메이션과 함께 scope 변경
         calendarView.setScope(newScope)
     }
 }

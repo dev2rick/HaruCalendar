@@ -13,8 +13,8 @@ public class HaruCalendarView: UIView {
     public weak var delegate: HaruCalendarViewDelegate?
     
     public var calendar: Calendar = .current
-    public private(set) var scope: HaruCalendarScope
-    public private(set) var currentPage = Date()
+    public internal(set) var scope: HaruCalendarScope
+    public internal(set) var currentPage = Date()
     public private(set) var today = Date()
     public private(set) var selectedDate: Date?
     public var minimumDate: Date = .distantPast
@@ -35,6 +35,12 @@ public class HaruCalendarView: UIView {
     
     var weeks: [Int: Date] = [:]
     var rowCounts: [Date: Int] = [:]
+    
+    var transitionHeight: CGFloat? = nil {
+        didSet {
+            invalidateIntrinsicContentSize()
+        }
+    }
     
     public init(scope: HaruCalendarScope) {
         self.calendarCollectionViewLayout = HaruCalendarCollectionViewLayout()
@@ -127,6 +133,10 @@ public class HaruCalendarView: UIView {
 
 public extension HaruCalendarView {
     
+    func setReferenceScrollView(_ scrollView: UIScrollView) {
+        coordinator.setReferenceScrollView(scrollView)
+    }
+    
     func reloadCalendar(for page: Date? = nil) {
         reloadSections()
         calendarCollectionView.reloadData()
@@ -172,15 +182,16 @@ extension HaruCalendarView: UICollectionViewDataSource {
     
     public override var intrinsicContentSize: CGSize {
         let noIntrinsicMetric = UIView.noIntrinsicMetric
+        var size = CGSize(width: noIntrinsicMetric, height: noIntrinsicMetric)
         
-        if let rowHeight = dataSource?.heightForRow(self) {
+        if let transitionHeight {
+            size.height = transitionHeight
+        } else if let rowHeight = dataSource?.heightForRow(self) {
             let numberOfRows: CGFloat = scope == .month ? 6 : 1
-            let totalHeight = rowHeight * numberOfRows
-            
-            return CGSize(width: noIntrinsicMetric, height: totalHeight)
-        } else {
-            return CGSize(width: noIntrinsicMetric, height: noIntrinsicMetric)
+            size.height = rowHeight * numberOfRows
         }
+        
+        return size
     }
     
     public func numberOfSections(in collectionView: UICollectionView) -> Int {

@@ -17,6 +17,7 @@ final class HaruCalendarTransitionCoordinator: NSObject {
     var cachedMonthSize: CGSize?
     var representingScope: HaruCalendarScope?
     var attributes: HaruCalendarTransitionAttributes?
+    weak var referenceView: UIScrollView?
     
     lazy var panGestureRecognizer: UIPanGestureRecognizer = {
         let recognizer = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture))
@@ -51,6 +52,7 @@ extension HaruCalendarTransitionCoordinator: UIGestureRecognizerDelegate {
         }
         scrollView.superview?.addGestureRecognizer(panGestureRecognizer)
         scrollView.panGestureRecognizer.require(toFail: panGestureRecognizer)
+        referenceView = scrollView
     }
     
     @objc
@@ -67,22 +69,19 @@ extension HaruCalendarTransitionCoordinator: UIGestureRecognizerDelegate {
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         guard let gestureRecognizer = gestureRecognizer as? UIPanGestureRecognizer else { return true }
         guard state == .idle else { return false }
-        let velocity = gestureRecognizer.velocity(in: gestureRecognizer.view)
+        guard let referenceView else { return true }
         
-        var shouldStart: Bool
-        if calendar.scope == .week {
-            shouldStart = velocity.y >= 0
-        } else {
-            shouldStart = velocity.y <= 0
+        let shouldBegin = referenceView.contentOffset.y <= -referenceView.contentInset.top
+        if shouldBegin {
+            let velocity = gestureRecognizer.velocity(in: gestureRecognizer.view)
+            switch self.calendar.scope {
+            case .month:
+                return velocity.y < 0
+            case .week:
+                return velocity.y > 0
+            }
         }
-        
-        if !shouldStart { return false }
-        shouldStart = abs(velocity.x) < abs(velocity.y)
-        if shouldStart {
-            calendar.calendarCollectionView.panGestureRecognizer.isEnabled = false
-            calendar.calendarCollectionView.panGestureRecognizer.isEnabled = true
-        }
-        return shouldStart
+        return shouldBegin
     }
     
     func scopeTransitionDidBegin(_ panGesture: UIPanGestureRecognizer) {
@@ -99,7 +98,7 @@ extension HaruCalendarTransitionCoordinator: UIGestureRecognizerDelegate {
         
         let sourceScope: HaruCalendarScope = calendar.scope
         let targetScope: HaruCalendarScope = calendar.scope == .month ? .week : .month
-        calendar.scope = targetScope
+        
         attributes = createTransitionAttributesTargetingScope(sourceScope: sourceScope, targetScope: targetScope)
         if targetScope == .month, let attributes {
             prepareWeekToMonthTransition(from: attributes)
@@ -129,6 +128,7 @@ extension HaruCalendarTransitionCoordinator: UIGestureRecognizerDelegate {
 extension HaruCalendarTransitionCoordinator {
     
     func performTransition(attributes: HaruCalendarTransitionAttributes, toProgress: CGFloat, animated: Bool) {
+        calendar.scope = attributes.targetScope
         let offset = calculateOffsetForProgress(attributes: attributes, progress: toProgress)
         calendar.collectionViewTopAnchor?.constant = offset
         calendar.invalidateIntrinsicContentSize()
@@ -233,11 +233,12 @@ extension HaruCalendarTransitionCoordinator {
         if attributes.targetScope == .week {
             calendar.reloadCalendar(for: attributes.targetPage)
         }
+        self.attributes = nil
         state = .idle
     }
     
     func prepareWeekToMonthTransition(from attributes: HaruCalendarTransitionAttributes) {
-        
+        calendar.scope = attributes.targetScope
         CATransaction.begin()
         CATransaction.setDisableActions(false)
         calendar.reloadCalendar(for: attributes.targetPage)

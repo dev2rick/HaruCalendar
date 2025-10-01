@@ -199,8 +199,9 @@ extension HaruCalendarView: UICollectionViewDataSource {
         } else if let rowHeight = dataSource?.heightForRow(self) {
             let numberOfRows: CGFloat = scope == .month ? 6 : 1
             size.height = rowHeight * numberOfRows
+            size.height += weekdayView.intrinsicContentSize.height
         }
-        size.height += weekdayView.intrinsicContentSize.height
+        
         return size
     }
     

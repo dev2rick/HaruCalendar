@@ -8,10 +8,10 @@
 import UIKit
 import HaruCalendar
 
-class ViewController: UIViewController {
+class ExampleViewController: UIViewController {
     
     let calendarView = HaruCalendarView(scope: .month)
-    let tableView = UITableView()
+    let tableView = UITableView(frame: .zero, style: .grouped)
     
     var items: [String] {
         (1 ... 100).map { "Item: #\($0)" }
@@ -37,6 +37,7 @@ class ViewController: UIViewController {
         
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.dataSource = self
+        tableView.delegate = self
         tableView.register(
             ExampleTableViewCell.self,
             forCellReuseIdentifier: ExampleTableViewCell.identifier
@@ -66,20 +67,45 @@ class ViewController: UIViewController {
     }
 }
 
-extension ViewController: UITableViewDataSource {
+extension ExampleViewController: UITableViewDataSource, UITableViewDelegate {
+    func numberOfSections(in tableView: UITableView) -> Int {
+        2
+    }
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        items.count
+        if section == 0 {
+            return 2
+        }
+        return items.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: ExampleTableViewCell.identifier, for: indexPath) as! ExampleTableViewCell
-        cell.config(text: items[indexPath.row])
+        
+        if indexPath.section == 0 {
+            let text = indexPath.row == 0 ? "Month": "Week"
+            cell.config(text: text)
+        } else {
+            cell.config(text: items[indexPath.row])
+        }
         
         return cell
     }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        
+        tableView.deselectRow(at: indexPath, animated: true)
+        
+        if indexPath.section == 0 {
+            let scope: HaruCalendarScope = indexPath.row == 0 ? .month : .week
+            calendarView.setScope(scope)
+        } else if let cell = tableView.cellForRow(at: indexPath) as? ExampleTableViewCell {
+            print(cell.label.text)
+        }
+    }
 }
 
-extension ViewController: HaruCalendarViewDelegate, HaruCalendarViewDataSource {
+extension ExampleViewController: HaruCalendarViewDelegate, HaruCalendarViewDataSource {
     func calendar(_ calendar: HaruCalendarView, didSelect date: Date, at monthPosition: HaruCalendarMonthPosition) {
         print(date)
     }

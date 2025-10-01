@@ -252,7 +252,7 @@ extension HaruCalendarTransitionCoordinator {
         
         let offset = calculateOffsetForProgress(attributes: attributes, progress: 0)
         calendar.collectionViewTopAnchor?.constant = offset
-        
+        calendar.layoutIfNeeded()
         CATransaction.commit()
     }
 }

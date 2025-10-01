@@ -97,10 +97,11 @@ extension HaruCalendarTransitionCoordinator: UIGestureRecognizerDelegate {
         }
         state = .changing
         
-        let target: HaruCalendarScope = calendar.scope == .month ? .week : .month
-        calendar.scope = target
-        attributes = createTransitionAttributesTargetingScope(sourceScope: calendar.scope, targetScope: target)
-        if target == .month, let attributes {
+        let sourceScope: HaruCalendarScope = calendar.scope
+        let targetScope: HaruCalendarScope = calendar.scope == .month ? .week : .month
+        calendar.scope = targetScope
+        attributes = createTransitionAttributesTargetingScope(sourceScope: sourceScope, targetScope: targetScope)
+        if targetScope == .month, let attributes {
             prepareWeekToMonthTransition(from: attributes)
         }
     }

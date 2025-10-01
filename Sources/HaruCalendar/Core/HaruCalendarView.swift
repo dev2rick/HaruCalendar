@@ -12,9 +12,9 @@ public class HaruCalendarView: UIView {
     public weak var dataSource: HaruCalendarViewDataSource?
     public weak var delegate: HaruCalendarViewDelegate?
     
-    public var calendar: Calendar = .current
     public internal(set) var scope: HaruCalendarScope
     public internal(set) var currentPage = Date()
+    public private(set) var calendar: Calendar = .current
     public private(set) var today = Date()
     public private(set) var selectedDate: Date?
     public var minimumDate: Date = .distantPast
@@ -26,6 +26,7 @@ public class HaruCalendarView: UIView {
     
     var collectionViewTopAnchor: NSLayoutConstraint?
     private var coordinator: HaruCalendarTransitionCoordinator!
+    private let weekdayView = HaruWeekdayView()
     internal let calendarCollectionView: HaruCalendarCollectionView
     internal let calendarCollectionViewLayout: HaruCalendarCollectionViewLayout
     
@@ -74,17 +75,25 @@ public class HaruCalendarView: UIView {
             HaruCalendarCollectionViewCell.self,
             forCellWithReuseIdentifier: HaruCalendarCollectionViewCell.identifier
         )
+        
+        weekdayView.setupLabels(with: calendar)
     }
     
     private func setupLayout() {
+        weekdayView.translatesAutoresizingMaskIntoConstraints = false
         calendarCollectionView.translatesAutoresizingMaskIntoConstraints = false
         
+        addSubview(weekdayView)
         addSubview(calendarCollectionView)
         
-        let collectionViewTopAnchor = calendarCollectionView.topAnchor.constraint(equalTo: topAnchor)
+        let collectionViewTopAnchor = calendarCollectionView.topAnchor.constraint(equalTo: weekdayView.bottomAnchor)
         self.collectionViewTopAnchor = collectionViewTopAnchor
-        
+        sendSubviewToBack(calendarCollectionView)
         NSLayoutConstraint.activate([
+            weekdayView.topAnchor.constraint(equalTo: topAnchor),
+            weekdayView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            weekdayView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            
             collectionViewTopAnchor,
             calendarCollectionView.leadingAnchor.constraint(equalTo: leadingAnchor),
             calendarCollectionView.trailingAnchor.constraint(equalTo: trailingAnchor),
@@ -170,7 +179,8 @@ public extension HaruCalendarView {
     func sizeThatFits(_ size: CGSize, scope: HaruCalendarScope) -> CGSize {
         if let rowHeight = dataSource?.heightForRow(self) {
             let numberOfRows: CGFloat = scope == .month ? 6 : 1
-            let totalHeight = rowHeight * numberOfRows
+            var totalHeight = rowHeight * numberOfRows
+            totalHeight += weekdayView.intrinsicContentSize.height
             return CGSize(width: size.width, height: totalHeight)
         } else {
             return size
@@ -190,7 +200,7 @@ extension HaruCalendarView: UICollectionViewDataSource {
             let numberOfRows: CGFloat = scope == .month ? 6 : 1
             size.height = rowHeight * numberOfRows
         }
-        
+        size.height += weekdayView.intrinsicContentSize.height
         return size
     }
     

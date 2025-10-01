@@ -47,7 +47,7 @@ extension HaruCalendarTransitionCoordinator: UIGestureRecognizerDelegate {
     
     func setReferenceScrollView(_ scrollView: UIScrollView) {
         guard scrollView.superview == calendar.superview else {
-            fatalError("ScrollView must be a same subview of the calendar view")
+            fatalError("Reference scrollView must share the same superview as the calendar view.")
         }
         scrollView.superview?.addGestureRecognizer(panGestureRecognizer)
         scrollView.panGestureRecognizer.require(toFail: panGestureRecognizer)

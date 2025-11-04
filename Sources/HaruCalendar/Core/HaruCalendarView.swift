@@ -9,23 +9,31 @@ import UIKit
 
 public class HaruCalendarView: UIView {
     
+    public enum TransitionState: Hashable {
+        case idle
+        case interactive(attributes: HaruCalendarTransitionAttributes)
+        case animating(to: HaruCalendarScope)
+    }
+    
     public weak var dataSource: HaruCalendarViewDataSource?
     public weak var delegate: HaruCalendarViewDelegate?
+    public weak var referenceView: UIScrollView?
     
     public internal(set) var scope: HaruCalendarScope
     public internal(set) var currentPage = Date()
-    public private(set) var calendar: Calendar = .current
-    public private(set) var today = Date()
-    public private(set) var selectedDate: Date?
+    public internal(set) var calendar: Calendar = .current
+    public internal(set) var today = Date()
+    public internal(set) var selectedDate: Date?
+    public internal(set) var transitionState: TransitionState = .idle
+    
     public var minimumDate: Date = .distantPast
     public var maximumDate: Date = .distantFuture
-    public var rowHeight: CGFloat = 100
     
     private(set) var numberOfMonths: Int = 0
     private(set) var numberOfWeeks: Int = 0
     
     var collectionViewTopAnchor: NSLayoutConstraint?
-    private var coordinator: HaruCalendarTransitionCoordinator!
+    
     private let weekdayView = HaruWeekdayView()
     internal let calendarCollectionView: HaruCalendarCollectionView
     internal let calendarCollectionViewLayout: HaruCalendarCollectionViewLayout
@@ -43,6 +51,14 @@ public class HaruCalendarView: UIView {
         }
     }
     
+    lazy var panGestureRecognizer: UIPanGestureRecognizer = {
+        let recognizer = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture))
+        recognizer.delegate = self
+        recognizer.minimumNumberOfTouches = 1
+        recognizer.maximumNumberOfTouches = 2
+        return recognizer
+    }()
+    
     public init(scope: HaruCalendarScope) {
         self.calendarCollectionViewLayout = HaruCalendarCollectionViewLayout()
         self.calendarCollectionView = HaruCalendarCollectionView(
@@ -51,7 +67,6 @@ public class HaruCalendarView: UIView {
         )
         self.scope = scope
         super.init(frame: .zero)
-        coordinator = HaruCalendarTransitionCoordinator(calendar: self)
         calendarCollectionViewLayout.calendar = self
         clipsToBounds = true
         setupView()
@@ -67,6 +82,7 @@ public class HaruCalendarView: UIView {
     }
     
     private func setupView() {
+        
         calendarCollectionView.delegate = self
         calendarCollectionView.dataSource = self
         calendarCollectionView.internalDelegate = self
@@ -142,10 +158,6 @@ public class HaruCalendarView: UIView {
 
 public extension HaruCalendarView {
     
-    func setReferenceScrollView(_ scrollView: UIScrollView) {
-        coordinator.setReferenceScrollView(scrollView)
-    }
-    
     func reloadCalendar(for page: Date? = nil) {
         reloadSections()
         calendarCollectionView.reloadData()
@@ -162,17 +174,16 @@ public extension HaruCalendarView {
         calendarCollectionView.scrollToSection(section, animated: animated)
     }
     
-    func setScope(_ scope: HaruCalendarScope) {
-        guard coordinator.state == .idle, self.scope != scope else { return }
+    func setScope(_ scope: HaruCalendarScope, animated: Bool = true) {
+        guard transitionState == .idle, self.scope != scope else { return }
         
         let fromScope = self.scope
         let toScope = scope
         self.scope = scope
-        
-        coordinator.performTransition(
+        performTransition(
             fromScope: fromScope,
             toScope: toScope,
-            animated: true
+            animated: animated
         )
     }
     
@@ -201,7 +212,6 @@ extension HaruCalendarView: UICollectionViewDataSource {
             size.height = rowHeight * numberOfRows
             size.height += weekdayView.intrinsicContentSize.height
         }
-        
         return size
     }
     

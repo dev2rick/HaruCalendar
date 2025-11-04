@@ -7,6 +7,9 @@
 
 import UIKit
 
+public protocol HaruCalendarCell: UICollectionViewCell {
+    
+}
 open class HaruCalendarCollectionViewCell: UICollectionViewCell {
     
     weak var calendarView: HaruCalendarView?

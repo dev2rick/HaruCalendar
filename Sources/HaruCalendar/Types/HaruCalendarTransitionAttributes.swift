@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct HaruCalendarTransitionAttributes {
+public struct HaruCalendarTransitionAttributes: Hashable {
     let sourceBounds: CGRect
     let targetBounds: CGRect
     let sourcePage: Date?

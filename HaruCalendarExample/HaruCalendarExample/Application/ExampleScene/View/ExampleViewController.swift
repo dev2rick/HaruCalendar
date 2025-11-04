@@ -33,18 +33,20 @@ class ExampleViewController: UIViewController {
         calendarView.translatesAutoresizingMaskIntoConstraints = false
         calendarView.delegate = self
         calendarView.dataSource = self
+//        calendarView.coordinator = coordinator
         view.addSubview(calendarView)
         
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.dataSource = self
         tableView.delegate = self
+        
         tableView.register(
             ExampleTableViewCell.self,
             forCellReuseIdentifier: ExampleTableViewCell.identifier
         )
         view.addSubview(tableView)
-        
-        calendarView.setReferenceScrollView(tableView)
+//        coordinator.setReferenceScrollView(tableView)[p
+//        calendarView.setReferenceScrollView(tableView)
     }
     
     private func setupConstraints() {
@@ -114,3 +116,37 @@ extension ExampleViewController: HaruCalendarViewDelegate, HaruCalendarViewDataS
         print(calendar.currentPage)
     }
 }
+//
+//struct PreviewCalendar: UIViewRepresentable {
+//    func makeUIView(context: Context) -> some UIView {
+//        let view = HaruCalendarView(scope: .month)
+//        view.dataSource = context.coordinator
+//        return view
+//    }
+//    
+//    func updateUIView(_ uiView: UIViewType, context: Context) {
+//        uiView.setContentHuggingPriority(.defaultHigh, for: .vertical)
+//    }
+//    
+//    @available(iOS 16.0, *)
+//    func sizeThatFits(_ proposal: ProposedViewSize, uiView: HaruCalendarView, context: Context) -> CGSize? {
+//        let size = CGSize(width: proposal.width ?? 0, height: 0)
+//        return uiView.sizeThatFits(size, scope: uiView.scope)
+//    }
+//    
+//    func makeCoordinator() -> Coordinator {
+//        Coordinator()
+//    }
+//    
+//    
+//    final class Coordinator: NSObject, HaruCalendarViewDataSource {
+//        func heightForRow(_ calendar: HaruCalendarView) -> CGFloat? {
+//            50
+//        }
+//    }
+//}
+//
+//#Preview {
+//    PreviewCalendar()
+//        .background(Color.green)
+//}

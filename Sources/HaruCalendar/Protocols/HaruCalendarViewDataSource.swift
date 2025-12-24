@@ -7,6 +7,7 @@
 
 import UIKit
 
+@MainActor
 public protocol HaruCalendarViewDataSource: AnyObject {
     func heightForRow(_ calendar: HaruCalendarView) -> CGFloat?
 }

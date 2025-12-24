@@ -5,7 +5,7 @@
 //  Created by rick on 9/25/25.
 //
 
-import Foundation
+import UIKit
 
 // MARK: - Coordinate Structure
 public struct HaruCalendarCoordinate {

@@ -7,6 +7,7 @@
 
 import UIKit
 
+@MainActor
 public protocol HaruCalendarViewDelegate: AnyObject {
     func calendar(_ calendar: HaruCalendarView, shouldSelect date: Date, at monthPosition: HaruCalendarMonthPosition) -> Bool
     func calendar(_ calendar: HaruCalendarView, didSelect date: Date, at monthPosition: HaruCalendarMonthPosition)

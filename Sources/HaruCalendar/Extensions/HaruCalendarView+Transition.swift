@@ -22,12 +22,8 @@ public extension HaruCalendarView {
     func createTransitionAttributesTargetingScope(sourceScope: HaruCalendarScope, targetScope: HaruCalendarScope) -> HaruCalendarTransitionAttributes {
         // get focusedDate
         
-        var candidates: [Date] = []
-        if let selectedDate = selectedDate {
-            candidates.append(selectedDate)
-        }
+        let candidates: [Date] = [selectedDate, today, currentPage]
         
-        candidates.append(contentsOf: [today, currentPage])
         let scope = targetScope == .week ? sourceScope : targetScope
         
         let focusedDate = candidates.first {

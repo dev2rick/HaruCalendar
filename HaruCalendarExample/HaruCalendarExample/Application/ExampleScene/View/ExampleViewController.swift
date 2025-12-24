@@ -6,11 +6,12 @@
 //
 
 import UIKit
+import SwiftUI
 import HaruCalendar
 
 class ExampleViewController: UIViewController {
     
-    let calendarView = HaruCalendarView(scope: .month)
+    let calendarView = HaruCalendarView(scope: .week)
     let tableView = UITableView(frame: .zero, style: .grouped)
     
     var items: [String] {
@@ -46,7 +47,7 @@ class ExampleViewController: UIViewController {
         )
         view.addSubview(tableView)
 //        coordinator.setReferenceScrollView(tableView)[p
-//        calendarView.setReferenceScrollView(tableView)
+        calendarView.setReferenceScrollView(tableView)
     }
     
     private func setupConstraints() {
@@ -117,7 +118,15 @@ extension ExampleViewController: HaruCalendarViewDelegate, HaruCalendarViewDataS
     }
 }
 //
-//struct PreviewCalendar: UIViewRepresentable {
+struct PreviewCalendar: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> some UIViewController {
+        let vc = ExampleViewController()
+        
+        return vc
+    }
+    func updateUIViewController(_ uiViewController: UIViewControllerType, context: Context) {
+        
+    }
 //    func makeUIView(context: Context) -> some UIView {
 //        let view = HaruCalendarView(scope: .month)
 //        view.dataSource = context.coordinator
@@ -144,9 +153,9 @@ extension ExampleViewController: HaruCalendarViewDelegate, HaruCalendarViewDataS
 //            50
 //        }
 //    }
-//}
-//
-//#Preview {
-//    PreviewCalendar()
-//        .background(Color.green)
-//}
+}
+
+#Preview {
+    PreviewCalendar()
+        .background(Color.green)
+}

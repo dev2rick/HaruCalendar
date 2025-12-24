@@ -14,7 +14,7 @@ public protocol HaruCalendarViewDelegate: AnyObject {
     func calendar(_ calendar: HaruCalendarView, shouldDeselect date: Date, at monthPosition: HaruCalendarMonthPosition) -> Bool
     func calendar(_ calendar: HaruCalendarView, didDeselect date: Date, at monthPosition: HaruCalendarMonthPosition)
     func calendar(_ calendar: HaruCalendarView, boundingRectWillChange bounds: CGRect, animated: Bool)
-    func calendar(_ calendar: HaruCalendarView, willDisplay cell: HaruCalendarCollectionViewCell, for date: Date, at monthPosition: HaruCalendarMonthPosition)
+    func calendar(_ calendar: HaruCalendarView, willDisplay cell: UICollectionViewCell, for date: Date, at monthPosition: HaruCalendarMonthPosition)
     func calendarCurrentPageDidChange(_ calendar: HaruCalendarView)
 }
 
@@ -39,7 +39,7 @@ public extension HaruCalendarViewDelegate {
         
     }
     
-    func calendar(_ calendar: HaruCalendarView, willDisplay cell: HaruCalendarCollectionViewCell, for date: Date, at monthPosition: HaruCalendarMonthPosition) {
+    func calendar(_ calendar: HaruCalendarView, willDisplay cell: UICollectionViewCell, for date: Date, at monthPosition: HaruCalendarMonthPosition) {
         
     }
     

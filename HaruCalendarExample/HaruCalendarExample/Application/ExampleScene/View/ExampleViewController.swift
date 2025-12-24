@@ -34,7 +34,13 @@ class ExampleViewController: UIViewController {
         calendarView.translatesAutoresizingMaskIntoConstraints = false
         calendarView.delegate = self
         calendarView.dataSource = self
-//        calendarView.coordinator = coordinator
+
+        // Register custom cell
+        calendarView.register(
+            CustomCalendarCell.self,
+            forCellWithReuseIdentifier: "CustomCalendarCell"
+        )
+
         view.addSubview(calendarView)
         
         tableView.translatesAutoresizingMaskIntoConstraints = false
@@ -109,10 +115,20 @@ extension ExampleViewController: UITableViewDataSource, UITableViewDelegate {
 }
 
 extension ExampleViewController: HaruCalendarViewDelegate, HaruCalendarViewDataSource {
+    // Custom cell implementation
+    func calendar(_ calendar: HaruCalendarView, cellForItemAt date: Date, at indexPath: IndexPath) -> any HaruCalendarCell {
+        let cell = calendar.calendarCollectionView.dequeueReusableCell(
+            withReuseIdentifier: "CustomCalendarCell",
+            for: indexPath
+        ) as! CustomCalendarCell
+
+        return cell
+    }
+
     func calendar(_ calendar: HaruCalendarView, didSelect date: Date, at monthPosition: HaruCalendarMonthPosition) {
         print(date)
     }
-    
+
     func calendarCurrentPageDidChange(_ calendar: HaruCalendarView) {
         print(calendar.currentPage)
     }

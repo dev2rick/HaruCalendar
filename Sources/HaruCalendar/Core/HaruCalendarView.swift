@@ -23,7 +23,7 @@ public class HaruCalendarView: UIView {
     public internal(set) var currentPage = Date()
     public internal(set) var calendar: Calendar = .current
     public internal(set) var today = Date()
-    public internal(set) var selectedDate: Date?
+    public internal(set) var selectedDate = Date()
     public internal(set) var transitionState: TransitionState = .idle
     
     public var minimumDate: Date = .distantPast
@@ -87,12 +87,11 @@ public class HaruCalendarView: UIView {
         calendarCollectionView.dataSource = self
         calendarCollectionView.internalDelegate = self
         
-        calendarCollectionView.register(
-            HaruCalendarCollectionViewCell.self,
-            forCellWithReuseIdentifier: HaruCalendarCollectionViewCell.identifier
-        )
-        
         weekdayView.setupLabels(with: calendar)
+    }
+    
+    public func register(_ cellClass: AnyClass?, forCellWithReuseIdentifier identifier: String) {
+        calendarCollectionView.register(cellClass, forCellWithReuseIdentifier: identifier)
     }
     
     private func setupLayout() {
@@ -231,28 +230,29 @@ extension HaruCalendarView: UICollectionViewDataSource {
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
-        let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: HaruCalendarCollectionViewCell.identifier,
-            for: indexPath
-        ) as! HaruCalendarCollectionViewCell
-        
-        let monthPosition = monthPosition(for: indexPath)
-        
-        cell.calendarView = self
-        
-        if let date = date(for: indexPath) {
-            
-            cell.isSelected = date == selectedDate
-            if cell.isSelected {
-                collectionView.selectItem(at: indexPath, animated: false, scrollPosition: [])
-            } else {
-                collectionView.deselectItem(at: indexPath, animated: false)
-            }
-            
-            cell.config(from: date, monthPosition: monthPosition, scope: scope)
+        // Get cell from dataSource (which should dequeue for reuse)
+        guard let date = date(for: indexPath),
+              let calendarCell = dataSource?.calendar(self, cellForItemAt: date, at: indexPath) else {
+            fatalError("Invalid date or cell for item at indexPath: \(indexPath)")
         }
-        
-        return cell
+
+        let monthPosition = monthPosition(for: indexPath)
+
+        // Configure using protocol methods
+        calendarCell.configure(date: date, monthPosition: monthPosition, scope: scope)
+
+        // Set selection state
+        let isSelected = date == selectedDate
+        calendarCell.setCalendarSelected(isSelected)
+
+        // Sync collection view selection
+        if isSelected {
+            collectionView.selectItem(at: indexPath, animated: false, scrollPosition: [])
+        } else {
+            collectionView.deselectItem(at: indexPath, animated: false)
+        }
+
+        return calendarCell
     }
 }
 
@@ -271,41 +271,42 @@ extension HaruCalendarView: UICollectionViewDelegate {
     
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         guard let date = date(for: indexPath) else { return }
-        
+
         let monthPosition = monthPosition(for: indexPath)
         selectDate(date, scrollToDate: false, at: monthPosition)
-        
-        // Perform selection animation
-        let cell = collectionView.cellForItem(at: indexPath) as? HaruCalendarCollectionViewCell
-        cell?.isSelected = true
-        cell?.performSelecting()
+
+        // Update cell selection state using protocol
+        if let calendarCell = collectionView.cellForItem(at: indexPath) as? HaruCalendarCell {
+            calendarCell.setCalendarSelected(true)
+        }
     }
     
     public func collectionView(_ collectionView: UICollectionView, shouldDeselectItemAt indexPath: IndexPath) -> Bool {
         guard let date = date(for: indexPath) else { return false }
-        
+        guard selectedDate != date else { return false }
         let monthPosition = monthPosition(for: indexPath)
         return delegate?.calendar(self, shouldDeselect: date, at: monthPosition) ?? true
     }
     
     public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
         guard let date = date(for: indexPath) else { return }
-        let cell = collectionView.cellForItem(at: indexPath) as? HaruCalendarCollectionViewCell
-        cell?.isSelected = false
-        selectedDate = nil
+
+        // Update cell selection state using protocol
+        if let calendarCell = collectionView.cellForItem(at: indexPath) as? (any HaruCalendarCell) {
+            calendarCell.setCalendarSelected(false)
+            calendarCell.updateAppearance()
+        }
+
         let monthPosition = monthPosition(for: indexPath)
         delegate?.calendar(self, didDeselect: date, at: monthPosition)
-        cell?.configAppearance()
     }
     
     public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-        guard
-            let calendarCell = cell as? HaruCalendarCollectionViewCell,
-            let date = date(for: indexPath) else {
+        guard let date = date(for: indexPath) else {
             return
         }
         let monthPosition = monthPosition(for: indexPath)
-        delegate?.calendar(self, willDisplay: calendarCell, for: date, at: monthPosition)
+        delegate?.calendar(self, willDisplay: cell, for: date, at: monthPosition)
     }
     
     public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
@@ -328,7 +329,26 @@ extension HaruCalendarView: UICollectionViewDelegate {
 extension HaruCalendarView: HaruCalendarCollectionViewInternalDelegate {
     func collectionViewDidFinishLayoutSubviews(_ collectionView: HaruCalendarCollectionView) {
         collectionView.visibleCells
-            .map { $0 as? HaruCalendarCollectionViewCell }
-            .forEach { $0?.configAppearance() }
+            .compactMap { $0 as? (any HaruCalendarCell) }
+            .forEach { $0.updateAppearance() }
+    }
+}
+
+// MARK: - Custom Cell Support
+
+public extension HaruCalendarView {
+    /// Returns the month position for a given index path
+    /// Useful when configuring custom cells
+    /// - Parameter indexPath: The index path to query
+    /// - Returns: The month position (previous, current, next, or notFound)
+    func getMonthPosition(for indexPath: IndexPath) -> HaruCalendarMonthPosition {
+        return monthPosition(for: indexPath)
+    }
+
+    /// Returns whether a date is currently selected
+    /// - Parameter date: The date to check
+    /// - Returns: True if the date is selected
+    func isDateSelected(_ date: Date) -> Bool {
+        return calendar.isDate(date, inSameDayAs: selectedDate)
     }
 }

@@ -35,8 +35,8 @@ public class HaruCalendarView: UIView {
     var collectionViewTopAnchor: NSLayoutConstraint?
     
     private let weekdayView = HaruWeekdayView()
-    internal let calendarCollectionView: HaruCalendarCollectionView
-    internal let calendarCollectionViewLayout: HaruCalendarCollectionViewLayout
+    public let calendarCollectionView: HaruCalendarCollectionView
+    public let calendarCollectionViewLayout: HaruCalendarCollectionViewLayout
     
     // Caches
     var months: [Int: Date] = [:]

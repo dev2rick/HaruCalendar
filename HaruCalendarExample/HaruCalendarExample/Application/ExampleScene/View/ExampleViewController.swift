@@ -30,7 +30,7 @@ class ExampleViewController: UIViewController {
         setupViews()
         setupConstraints()
     }
-    
+
     private func setupViews() {
         
         calendarView.translatesAutoresizingMaskIntoConstraints = false

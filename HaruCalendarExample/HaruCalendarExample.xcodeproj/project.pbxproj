@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		1DAA00032F00000100000003 /* HaruCalendar in Frameworks */ = {isa = PBXBuildFile; productRef = 1DAA00022F00000100000002 /* HaruCalendar */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		1DCCA3702E80EDED00D03F18 /* HaruCalendarExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HaruCalendarExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -21,12 +25,6 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		1D4C74622EFB7F3300591901 /* HaruCalendar */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			name = HaruCalendar;
-			path = ../Sources/HaruCalendar;
-			sourceTree = SOURCE_ROOT;
-		};
 		1DCCA3722E80EDED00D03F18 /* HaruCalendarExample */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -42,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1DAA00032F00000100000003 /* HaruCalendar in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -51,7 +50,6 @@
 		1DCCA3672E80EDED00D03F18 = {
 			isa = PBXGroup;
 			children = (
-				1D4C74622EFB7F3300591901 /* HaruCalendar */,
 				1DCCA3722E80EDED00D03F18 /* HaruCalendarExample */,
 				1DCCA3712E80EDED00D03F18 /* Products */,
 			);
@@ -81,11 +79,11 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				1D4C74622EFB7F3300591901 /* HaruCalendar */,
 				1DCCA3722E80EDED00D03F18 /* HaruCalendarExample */,
 			);
 			name = HaruCalendarExample;
 			packageProductDependencies = (
+				1DAA00022F00000100000002 /* HaruCalendar */,
 			);
 			productName = HaruCalendarExample;
 			productReference = 1DCCA3702E80EDED00D03F18 /* HaruCalendarExample.app */;
@@ -116,6 +114,7 @@
 			mainGroup = 1DCCA3672E80EDED00D03F18;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				1DAA00012F00000100000001 /* XCLocalSwiftPackageReference ".." */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1DCCA3712E80EDED00D03F18 /* Products */;
@@ -126,6 +125,20 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		1DAA00012F00000100000001 /* XCLocalSwiftPackageReference ".." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ..;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1DAA00022F00000100000002 /* HaruCalendar */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HaruCalendar;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin PBXResourcesBuildPhase section */
 		1DCCA36E2E80EDED00D03F18 /* Resources */ = {

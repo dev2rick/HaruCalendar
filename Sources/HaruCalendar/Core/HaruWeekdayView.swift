@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  HaruWeekdayView.swift
 //  HaruCalendar
 //
 //  Created by rick on 10/1/25.
@@ -7,16 +7,84 @@
 
 import UIKit
 
-final class HaruWeekdayView: UIView {
-    
-    lazy var labels: [UILabel] = {
+/// Default weekday header.
+///
+/// Customize it in place through its appearance properties, subclass it to
+/// override `title(for:calendar:)` / `configureLabel(_:at:)`, or replace it
+/// entirely with any `HaruCalendarWeekdayView` conforming view.
+open class HaruWeekdayView: UIView, HaruCalendarWeekdayView {
+
+    /// Which set of weekday symbols the default titles are taken from.
+    public enum SymbolStyle: Hashable, Sendable {
+        /// e.g. "S", "M" (`Calendar.veryShortWeekdaySymbols`)
+        case veryShort
+        /// e.g. "Sun", "Mon" (`Calendar.shortWeekdaySymbols`)
+        case short
+        /// e.g. "Sunday", "Monday" (`Calendar.weekdaySymbols`)
+        case full
+    }
+
+    /// The seven labels, ordered left to right starting at `Calendar.firstWeekday`.
+    public private(set) lazy var labels: [UILabel] = {
         (0 ..< 7).map { _ in UILabel() }
     }()
-    
-    override init(frame: CGRect) {
+
+    /// Symbol set used when `weekdaySymbols` is `nil`. Defaults to `.short`.
+    open var symbolStyle: SymbolStyle = .short {
+        didSet { updateLabels() }
+    }
+
+    /// Overrides the calendar supplied symbols. Must contain 7 entries,
+    /// ordered starting at `Calendar.firstWeekday`. Defaults to `nil`.
+    open var weekdaySymbols: [String]? {
+        didSet { updateLabels() }
+    }
+
+    /// Font applied to every label. Defaults to `.systemFont(ofSize: 14)`.
+    open var font: UIFont = .systemFont(ofSize: 14) {
+        didSet { updateLabels() }
+    }
+
+    /// Text color applied to every label. Defaults to `.label`.
+    open var textColor: UIColor = .label {
+        didSet { updateLabels() }
+    }
+
+    /// Per-index text color, e.g. to tint weekends. Index 0 is the leftmost
+    /// column. Returning `nil` falls back to `textColor`. Defaults to `nil`.
+    open var textColorProvider: ((Int) -> UIColor?)? {
+        didSet { updateLabels() }
+    }
+
+    /// Height of the header. Defaults to 44.
+    ///
+    /// After changing it, call `invalidateIntrinsicContentSize()` on the
+    /// owning `HaruCalendarView` so the calendar height is recalculated.
+    open var weekdayHeight: CGFloat = 44 {
+        didSet {
+            guard weekdayHeight != oldValue else { return }
+            invalidateIntrinsicContentSize()
+        }
+    }
+
+    /// Calendar the header is currently configured for.
+    public private(set) var calendar: Calendar = .current
+
+    public let stackView = UIStackView()
+
+    public override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = .systemBackground
-        let stackView = UIStackView(arrangedSubviews: labels)
+        setupLayout()
+        updateLabels()
+    }
+
+    required public init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupLayout() {
+        labels.forEach { stackView.addArrangedSubview($0) }
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .horizontal
         stackView.distribution = .fillEqually
@@ -28,22 +96,47 @@ final class HaruWeekdayView: UIView {
             stackView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
     }
-    
-    func setupLabels(with calendar: Calendar) {
-        for idx in labels.indices {
-            let label = labels[idx]
-            label.textAlignment = .center
-            label.text = calendar.shortWeekdaySymbols[idx]
-            label.textColor = .label
-            label.font = .systemFont(ofSize: 14)
+
+    open func configure(calendar: Calendar) {
+        self.calendar = calendar
+        updateLabels()
+    }
+
+    /// Title for the column at `index` (0 is the leftmost column, which
+    /// corresponds to `calendar.firstWeekday`). Override to supply custom text.
+    open func title(for index: Int, calendar: Calendar) -> String {
+        if let weekdaySymbols, weekdaySymbols.indices.contains(index) {
+            return weekdaySymbols[index]
+        }
+
+        let symbols: [String]
+        switch symbolStyle {
+        case .veryShort: symbols = calendar.veryShortWeekdaySymbols
+        case .short: symbols = calendar.shortWeekdaySymbols
+        case .full: symbols = calendar.weekdaySymbols
+        }
+
+        guard symbols.count == 7 else { return "" }
+        // Symbols are Sunday-first; rotate so the first column matches firstWeekday.
+        return symbols[(index + calendar.firstWeekday - 1) % 7]
+    }
+
+    /// Applies appearance to a single label. Override for per-column styling.
+    open func configureLabel(_ label: UILabel, at index: Int) {
+        label.textAlignment = .center
+        label.text = title(for: index, calendar: calendar)
+        label.font = font
+        label.textColor = textColorProvider?(index) ?? textColor
+    }
+
+    /// Reapplies titles and appearance to every label.
+    public func updateLabels() {
+        for index in labels.indices {
+            configureLabel(labels[index], at: index)
         }
     }
-    
-    override var intrinsicContentSize: CGSize {
-        CGSize(width: -1, height: 44)
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+
+    open override var intrinsicContentSize: CGSize {
+        CGSize(width: UIView.noIntrinsicMetric, height: weekdayHeight)
     }
 }

@@ -34,7 +34,12 @@ public class HaruCalendarView: UIView {
     
     var collectionViewTopAnchor: NSLayoutConstraint?
     
-    private let weekdayView = HaruWeekdayView()
+    /// The weekday header displayed above the calendar grid.
+    ///
+    /// Defaults to `HaruWeekdayView`. Inject a custom one through
+    /// `init(scope:weekdayView:)` or replace it later with `setWeekdayView(_:)`.
+    public private(set) var weekdayView: any HaruCalendarWeekdayView
+    private var weekdayViewConstraints: [NSLayoutConstraint] = []
     public let calendarCollectionView: HaruCalendarCollectionView
     public let calendarCollectionViewLayout: HaruCalendarCollectionViewLayout
     
@@ -59,7 +64,13 @@ public class HaruCalendarView: UIView {
         return recognizer
     }()
     
-    public init(scope: HaruCalendarScope) {
+    /// Creates a calendar view.
+    /// - Parameters:
+    ///   - scope: Initial scope (`.month` or `.week`).
+    ///   - weekdayView: Weekday header to use. Pass a custom
+    ///     `HaruCalendarWeekdayView` to replace the default header.
+    public init(scope: HaruCalendarScope, weekdayView: any HaruCalendarWeekdayView = HaruWeekdayView()) {
+        self.weekdayView = weekdayView
         self.calendarCollectionViewLayout = HaruCalendarCollectionViewLayout()
         self.calendarCollectionView = HaruCalendarCollectionView(
             frame: .zero,
@@ -87,7 +98,7 @@ public class HaruCalendarView: UIView {
         calendarCollectionView.dataSource = self
         calendarCollectionView.internalDelegate = self
         
-        weekdayView.setupLabels(with: calendar)
+        weekdayView.configure(calendar: calendar)
     }
     
     public func register(_ cellClass: AnyClass?, forCellWithReuseIdentifier identifier: String) {
@@ -95,25 +106,57 @@ public class HaruCalendarView: UIView {
     }
     
     private func setupLayout() {
-        weekdayView.translatesAutoresizingMaskIntoConstraints = false
         calendarCollectionView.translatesAutoresizingMaskIntoConstraints = false
-        
-        addSubview(weekdayView)
         addSubview(calendarCollectionView)
         
-        let collectionViewTopAnchor = calendarCollectionView.topAnchor.constraint(equalTo: weekdayView.bottomAnchor)
-        self.collectionViewTopAnchor = collectionViewTopAnchor
-        sendSubviewToBack(calendarCollectionView)
         NSLayoutConstraint.activate([
-            weekdayView.topAnchor.constraint(equalTo: topAnchor),
-            weekdayView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            weekdayView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            
-            collectionViewTopAnchor,
             calendarCollectionView.leadingAnchor.constraint(equalTo: leadingAnchor),
             calendarCollectionView.trailingAnchor.constraint(equalTo: trailingAnchor),
             calendarCollectionView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
+        
+        installWeekdayView(topConstant: 0)
+    }
+    
+    /// Adds `weekdayView` to the hierarchy and (re)creates the constraints that
+    /// depend on it, including `collectionViewTopAnchor`.
+    private func installWeekdayView(topConstant: CGFloat) {
+        NSLayoutConstraint.deactivate(weekdayViewConstraints)
+        weekdayViewConstraints.removeAll()
+        collectionViewTopAnchor?.isActive = false
+        
+        weekdayView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(weekdayView)
+        sendSubviewToBack(calendarCollectionView)
+        
+        let collectionViewTopAnchor = calendarCollectionView.topAnchor.constraint(equalTo: weekdayView.bottomAnchor)
+        collectionViewTopAnchor.constant = topConstant
+        self.collectionViewTopAnchor = collectionViewTopAnchor
+        
+        weekdayViewConstraints = [
+            weekdayView.topAnchor.constraint(equalTo: topAnchor),
+            weekdayView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            weekdayView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            collectionViewTopAnchor
+        ]
+        NSLayoutConstraint.activate(weekdayViewConstraints)
+    }
+    
+    /// Replaces the weekday header with a custom one.
+    ///
+    /// Only valid while no transition is running; calls made during an
+    /// interactive or animating transition are ignored.
+    /// - Parameter weekdayView: The header to install.
+    public func setWeekdayView(_ weekdayView: any HaruCalendarWeekdayView) {
+        guard transitionState == .idle, weekdayView !== self.weekdayView else { return }
+        
+        let topConstant = collectionViewTopAnchor?.constant ?? 0
+        self.weekdayView.removeFromSuperview()
+        self.weekdayView = weekdayView
+        weekdayView.configure(calendar: calendar)
+        installWeekdayView(topConstant: topConstant)
+        invalidateIntrinsicContentSize()
+        setNeedsLayout()
     }
     
     internal func reloadSections() {
@@ -190,7 +233,7 @@ public extension HaruCalendarView {
         if let rowHeight = dataSource?.heightForRow(self) {
             let numberOfRows: CGFloat = scope == .month ? 6 : 1
             var totalHeight = rowHeight * numberOfRows
-            totalHeight += weekdayView.intrinsicContentSize.height
+            totalHeight += weekdayView.weekdayHeight
             return CGSize(width: size.width, height: totalHeight)
         } else {
             return size
@@ -209,7 +252,7 @@ extension HaruCalendarView: UICollectionViewDataSource {
         } else if let rowHeight = dataSource?.heightForRow(self) {
             let numberOfRows: CGFloat = scope == .month ? 6 : 1
             size.height = rowHeight * numberOfRows
-            size.height += weekdayView.intrinsicContentSize.height
+            size.height += weekdayView.weekdayHeight
         }
         return size
     }

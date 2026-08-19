@@ -171,6 +171,11 @@ calendarView.setWeekdayView(MyWeekdayView())  // ignored unless transitionState 
 (calendarView.weekdayView as? HaruWeekdayView)?.symbolStyle = .veryShort
 ```
 
+The gap between header and grid is `calendarView.weekdaySpacing` (default 0).
+It is the resting value of `collectionViewTopAnchor`, so transitions must go
+through `setCollectionViewOffset(_:)` (0 = at rest) rather than setting the
+constraint constant directly.
+
 `weekdayHeight` feeds `intrinsicContentSize`; changing it later requires
 `calendarView.invalidateIntrinsicContentSize()`. Replacing the header rebuilds
 `collectionViewTopAnchor` (it is pinned to the header's bottom), preserving the

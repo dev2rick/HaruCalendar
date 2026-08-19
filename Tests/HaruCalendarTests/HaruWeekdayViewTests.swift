@@ -73,3 +73,26 @@ private func labels(of view: HaruWeekdayView) -> [String] {
     #expect(calendarView.weekdayView === replacement)
     #expect(stub.superview == nil)
 }
+
+@MainActor
+@Test func weekdaySpacingSeparatesHeaderFromGrid() {
+    let source = PagingProbeSource()
+    let calendarView = HaruCalendarView(scope: .week)
+    calendarView.dataSource = source
+    calendarView.register(PagingProbeCell.self, forCellWithReuseIdentifier: "probe")
+
+    let baseHeight = calendarView.intrinsicContentSize.height
+    calendarView.weekdaySpacing = 4
+
+    #expect(calendarView.intrinsicContentSize.height == baseHeight + 4)
+
+    let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 393, height: 852))
+    calendarView.frame = CGRect(x: 0, y: 0, width: 393, height: calendarView.intrinsicContentSize.height)
+    window.addSubview(calendarView)
+    window.makeKeyAndVisible()
+    calendarView.layoutIfNeeded()
+
+    let gap = calendarView.calendarCollectionView.frame.minY - calendarView.weekdayView.frame.maxY
+    #expect(gap == 4)
+    _ = (source, window)
+}

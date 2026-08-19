@@ -29,6 +29,21 @@ public class HaruCalendarView: UIView {
     public var minimumDate: Date = .distantPast
     public var maximumDate: Date = .distantFuture
     
+    /// Vertical gap between the weekday header and the calendar grid.
+    ///
+    /// Defaults to 0. The gap is added to `intrinsicContentSize` and is the
+    /// resting value of the grid's top constraint, so transitions animate
+    /// relative to it.
+    public var weekdaySpacing: CGFloat = 0 {
+        didSet {
+            guard weekdaySpacing != oldValue else { return }
+            if transitionState == .idle {
+                setCollectionViewOffset(0)
+            }
+            invalidateIntrinsicContentSize()
+        }
+    }
+    
     private(set) var numberOfMonths: Int = 0
     private(set) var numberOfWeeks: Int = 0
     
@@ -115,7 +130,7 @@ public class HaruCalendarView: UIView {
             calendarCollectionView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
         
-        installWeekdayView(topConstant: 0)
+        installWeekdayView(topConstant: weekdaySpacing)
     }
     
     /// Adds `weekdayView` to the hierarchy and (re)creates the constraints that
@@ -197,6 +212,14 @@ public class HaruCalendarView: UIView {
         delegate?.calendar(self, didSelect: date, at: monthPosition)
     }
     
+    /// Positions the grid `offset` points away from its resting place, which
+    /// is `weekdaySpacing` below the weekday header.
+    ///
+    /// Transitions pass negative offsets to slide the grid up; `0` is at rest.
+    func setCollectionViewOffset(_ offset: CGFloat) {
+        collectionViewTopAnchor?.constant = weekdaySpacing + offset
+    }
+    
     /// Mirrors `selectedDate` into the collection view's selection state.
     ///
     /// Called after `reloadData()` rather than from `cellForItemAt`, which must
@@ -243,7 +266,7 @@ public extension HaruCalendarView {
         if let rowHeight = dataSource?.heightForRow(self) {
             let numberOfRows: CGFloat = scope == .month ? 6 : 1
             var totalHeight = rowHeight * numberOfRows
-            totalHeight += weekdayView.weekdayHeight
+            totalHeight += weekdayView.weekdayHeight + weekdaySpacing
             return CGSize(width: size.width, height: totalHeight)
         } else {
             return size
@@ -262,7 +285,7 @@ extension HaruCalendarView: UICollectionViewDataSource {
         } else if let rowHeight = dataSource?.heightForRow(self) {
             let numberOfRows: CGFloat = scope == .month ? 6 : 1
             size.height = rowHeight * numberOfRows
-            size.height += weekdayView.weekdayHeight
+            size.height += weekdayView.weekdayHeight + weekdaySpacing
         }
         return size
     }

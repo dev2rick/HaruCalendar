@@ -88,7 +88,7 @@ extension HaruCalendarView: UIGestureRecognizerDelegate {
         let currentBounds = CGRect(x: 0, y: 0, width: attributes.targetBounds.width, height: currentHeight)
         
         let offset = calculateOffsetForProgress(attributes: attributes, progress: progress)
-        collectionViewTopAnchor?.constant = offset
+        setCollectionViewOffset(offset)
         transitionHeight = currentHeight
     }
     

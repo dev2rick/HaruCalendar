@@ -78,12 +78,12 @@ public extension HaruCalendarView {
         
         CATransaction.setDisableActions(true)
         let totalHeight = calendarCollectionViewLayout.collectionViewContentSize.height
-        collectionViewTopAnchor?.constant = -totalHeight
+        setCollectionViewOffset(-totalHeight)
         layoutIfNeeded()
         CATransaction.setDisableActions(false)
         
         let offset = calculateOffsetForProgress(attributes: attributes, progress: 0)
-        collectionViewTopAnchor?.constant = offset
+        setCollectionViewOffset(offset)
         layoutIfNeeded()
         CATransaction.commit()
     }
@@ -104,7 +104,7 @@ public extension HaruCalendarView {
     func performTransition(attributes: HaruCalendarTransitionAttributes, toProgress: CGFloat, animated: Bool) {
         scope = attributes.targetScope
         let offset = calculateOffsetForProgress(attributes: attributes, progress: toProgress)
-        collectionViewTopAnchor?.constant = offset
+        setCollectionViewOffset(offset)
         invalidateIntrinsicContentSize()
         
         UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseInOut) { [weak self] in
@@ -115,7 +115,7 @@ public extension HaruCalendarView {
     }
     
     func performTransitionCompletion(from attributes: HaruCalendarTransitionAttributes) {
-        collectionViewTopAnchor?.constant = 0
+        setCollectionViewOffset(0)
         superview?.layoutIfNeeded()
         
         if attributes.targetScope == .week {

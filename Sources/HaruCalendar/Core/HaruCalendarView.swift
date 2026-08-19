@@ -196,6 +196,15 @@ public class HaruCalendarView: UIView {
         
         delegate?.calendar(self, didSelect: date, at: monthPosition)
     }
+    
+    /// Mirrors `selectedDate` into the collection view's selection state.
+    ///
+    /// Called after `reloadData()` rather than from `cellForItemAt`, which must
+    /// not mutate the collection view.
+    private func syncSelection() {
+        guard let indexPath = indexPath(for: selectedDate, scope: scope) else { return }
+        calendarCollectionView.selectItem(at: indexPath, animated: false, scrollPosition: [])
+    }
 }
 
 public extension HaruCalendarView {
@@ -203,6 +212,7 @@ public extension HaruCalendarView {
     func reloadCalendar(for page: Date? = nil) {
         reloadSections()
         calendarCollectionView.reloadData()
+        syncSelection()
         
         let date = page ?? currentPage
         scrollTo(date: date, animated: false)
@@ -284,16 +294,11 @@ extension HaruCalendarView: UICollectionViewDataSource {
         // Configure using protocol methods
         calendarCell.configure(date: date, monthPosition: monthPosition, scope: scope)
 
-        // Set selection state
-        let isSelected = date == selectedDate
-        calendarCell.setCalendarSelected(isSelected)
-
-        // Sync collection view selection
-        if isSelected {
-            collectionView.selectItem(at: indexPath, animated: false, scrollPosition: [])
-        } else {
-            collectionView.deselectItem(at: indexPath, animated: false)
-        }
+        // Set selection state. Do not call selectItem/deselectItem here:
+        // mutating the collection view's selection while it is asking for a
+        // cell can make UIKit drop cells mid-scroll. Selection is synced in
+        // syncSelection() after reloads instead.
+        calendarCell.setCalendarSelected(date == selectedDate)
 
         return calendarCell
     }

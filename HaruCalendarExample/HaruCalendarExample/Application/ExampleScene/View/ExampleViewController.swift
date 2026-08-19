@@ -11,7 +11,9 @@ import HaruCalendar
 
 class ExampleViewController: UIViewController {
     
-    let calendarView = HaruCalendarView(scope: .week)
+    // Inject a custom weekday header. Pass nothing (or a configured
+    // `HaruWeekdayView`) to keep the default header.
+    let calendarView = HaruCalendarView(scope: .week, weekdayView: CustomWeekdayView())
     let tableView = UITableView(frame: .zero, style: .grouped)
     
     var items: [String] {

@@ -94,6 +94,8 @@ Scope transitions modify:
 - Only recalculates when `collectionViewSize != currentSize || numberOfSections != currentSections`
 - Caches `itemAttributes`, `widths`, `heights`, `lefts`, `tops`
 - **Critical**: This aggressive caching can cause stale layouts - force invalidation with `invalidateLayout()` when needed
+- `shouldInvalidateLayout(forBoundsChange:)` returns `true`: horizontal paging only moves the bounds, and without invalidation UICollectionView stops re-querying the layout, leaving the rightmost column cell-less when scrolling back to a visited page
+- `layoutAttributesForItem(at:)` returns **copies** of the cached attributes; UIKit mutates the objects a layout hands it
 
 ### Interactive Transition Mechanics
 

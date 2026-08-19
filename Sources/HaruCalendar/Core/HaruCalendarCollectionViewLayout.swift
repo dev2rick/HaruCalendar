@@ -94,6 +94,16 @@ public class HaruCalendarCollectionViewLayout: UICollectionViewLayout {
         return contentSize
     }
     
+    /// Horizontal paging moves the bounds without changing their size, and
+    /// UICollectionView will not re-query a layout that never invalidates.
+    /// Scrolling back to a page it already visited then leaves the item at the
+    /// page boundary (the rightmost column) without a cell, so invalidate on
+    /// every bounds change. `prepare()` early-returns unless the size or the
+    /// section count actually changed, so this stays cheap.
+    public override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
+        return true
+    }
+    
     public override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
         guard let collectionView else { return nil }
         
@@ -125,10 +135,12 @@ public class HaruCalendarCollectionViewLayout: UICollectionViewLayout {
         return layoutAttributes
     }
     
+    /// Returns a copy of the cached attributes: UIKit may mutate the objects a
+    /// layout hands it, and the cache has to stay pristine.
     public override func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
         // Check cache first
         if let cachedAttributes = itemAttributes[indexPath] {
-            return cachedAttributes
+            return cachedAttributes.copy() as? UICollectionViewLayoutAttributes
         }
         
         let column = indexPath.item % 7
@@ -161,6 +173,6 @@ public class HaruCalendarCollectionViewLayout: UICollectionViewLayout {
         // Cache the calculated attributes
         itemAttributes[indexPath] = attributes
         
-        return attributes
+        return attributes.copy() as? UICollectionViewLayoutAttributes
     }
 }

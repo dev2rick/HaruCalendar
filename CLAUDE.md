@@ -56,7 +56,7 @@ guard case .interactive(let attributes) = transitionState else { return }
 
 1. **HaruCalendarView** (Main Container)
    - Main public API and UIView container
-   - Manages two subviews: `HaruWeekdayView` (header) and `HaruCalendarCollectionView` (calendar grid)
+   - Manages two subviews: a weekday header (`any HaruCalendarWeekdayView`, default `HaruWeekdayView`) and `HaruCalendarCollectionView` (calendar grid)
    - Uses intrinsic content sizing for flexible layout
    - **Critical Property**: `transitionHeight: CGFloat?` - when set, overrides intrinsic content size during animations
 
@@ -159,6 +159,23 @@ calendarView.performTransition(fromScope: .month, toScope: .week, animated: true
 // Automatically handled if reference scroll view is set via setReferenceScrollView(_:)
 ```
 
+### Weekday Header Customization
+The header is any view conforming to `HaruCalendarWeekdayView` (`configure(calendar:)` + `weekdayHeight`):
+
+```swift
+// Inject at init, or swap later
+let calendarView = HaruCalendarView(scope: .month, weekdayView: MyWeekdayView())
+calendarView.setWeekdayView(MyWeekdayView())  // ignored unless transitionState == .idle
+
+// Or tweak the default header in place
+(calendarView.weekdayView as? HaruWeekdayView)?.symbolStyle = .veryShort
+```
+
+`weekdayHeight` feeds `intrinsicContentSize`; changing it later requires
+`calendarView.invalidateIntrinsicContentSize()`. Replacing the header rebuilds
+`collectionViewTopAnchor` (it is pinned to the header's bottom), preserving the
+current constant.
+
 ### Date Selection
 Implement `HaruCalendarViewDelegate`:
 - `calendar(_:shouldSelect:at:)` - gate selection
@@ -172,6 +189,7 @@ Implement `HaruCalendarViewDelegate`:
 - **Constraint modification during animation** - `collectionViewTopAnchor` is manipulated directly; ensure superview exists
 - **Scope changes update TransitionState** - check state before starting new transitions to prevent conflicts
 - **No coordinator pattern** - all logic is in the view and its extensions
+- **Weekday header swaps only while idle** - `setWeekdayView(_:)` rebuilds `collectionViewTopAnchor`, so it is a no-op during a transition
 
 ## Development Context
 

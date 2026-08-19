@@ -40,6 +40,15 @@ open class HaruWeekdayView: UIView, HaruCalendarWeekdayView {
         didSet { updateLabels() }
     }
 
+    /// Overrides the locale used for the weekday symbols.
+    ///
+    /// `nil` (the default) uses the locale of the calendar passed to
+    /// `configure(calendar:)`, i.e. `Locale.current` in most apps. Set this to
+    /// pin the header to a language regardless of device settings.
+    open var locale: Locale? {
+        didSet { updateLabels() }
+    }
+
     /// Font applied to every label. Defaults to `.systemFont(ofSize: 14)`.
     open var font: UIFont = .systemFont(ofSize: 14) {
         didSet { updateLabels() }
@@ -109,16 +118,25 @@ open class HaruWeekdayView: UIView, HaruCalendarWeekdayView {
             return weekdaySymbols[index]
         }
 
+        var source = calendar
+        if let locale {
+            source.locale = locale
+        } else if source.locale == nil || source.locale?.identifier.isEmpty == true {
+            // A Calendar built with Calendar(identifier:) carries an empty
+            // locale, for which Foundation returns English symbols.
+            source.locale = .current
+        }
+
         let symbols: [String]
         switch symbolStyle {
-        case .veryShort: symbols = calendar.veryShortWeekdaySymbols
-        case .short: symbols = calendar.shortWeekdaySymbols
-        case .full: symbols = calendar.weekdaySymbols
+        case .veryShort: symbols = source.veryShortWeekdaySymbols
+        case .short: symbols = source.shortWeekdaySymbols
+        case .full: symbols = source.weekdaySymbols
         }
 
         guard symbols.count == 7 else { return "" }
         // Symbols are Sunday-first; rotate so the first column matches firstWeekday.
-        return symbols[(index + calendar.firstWeekday - 1) % 7]
+        return symbols[(index + source.firstWeekday - 1) % 7]
     }
 
     /// Applies appearance to a single label. Override for per-column styling.

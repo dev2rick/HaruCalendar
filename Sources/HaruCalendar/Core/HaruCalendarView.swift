@@ -23,8 +23,15 @@ public class HaruCalendarView: UIView {
     public internal(set) var currentPage = Date()
     public internal(set) var calendar: Calendar = .current
     public internal(set) var today = Date()
-    public internal(set) var selectedDate = Date()
+    /// The selected day, normalized to the start of the day.
+    ///
+    /// Set it with `select(_:scrollToDate:animated:)`.
+    public internal(set) var selectedDate = Calendar.current.startOfDay(for: Date())
     public internal(set) var transitionState: TransitionState = .idle
+
+    /// Set while an animated scroll started by the calendar itself is running,
+    /// so that scroll is not reported as a user-driven page change.
+    private var isSuppressingPageChange = false
     
     public var minimumDate: Date = .distantPast
     public var maximumDate: Date = .distantFuture
@@ -203,7 +210,7 @@ public class HaruCalendarView: UIView {
             return
         }
         
-        selectedDate = date
+        selectedDate = calendar.startOfDay(for: date)
         
         if let section = indexPath(for: currentPage, scope: scope)?.section, scrollToDate {
             calendarCollectionView.scrollToSection(section, animated: true)
@@ -220,18 +227,98 @@ public class HaruCalendarView: UIView {
         collectionViewTopAnchor?.constant = weekdaySpacing + offset
     }
     
-    /// Mirrors `selectedDate` into the collection view's selection state.
+    /// Mirrors `selectedDate` into the collection view's selection state and
+    /// into the cells that are already on screen.
     ///
     /// Called after `reloadData()` rather than from `cellForItemAt`, which must
-    /// not mutate the collection view.
+    /// not mutate the collection view. Does nothing until the grid has data,
+    /// which is also why `select(_:scrollToDate:animated:)` is safe to call
+    /// before the first reload: `reloadCalendar()` runs this again afterwards.
     private func syncSelection() {
-        guard let indexPath = indexPath(for: selectedDate, scope: scope) else { return }
-        calendarCollectionView.selectItem(at: indexPath, animated: false, scrollPosition: [])
+        let collectionView = calendarCollectionView
+
+        guard let indexPath = indexPath(for: selectedDate, scope: scope),
+              indexPath.section < collectionView.numberOfSections,
+              indexPath.item < collectionView.numberOfItems(inSection: indexPath.section) else {
+            return
+        }
+
+        collectionView.indexPathsForSelectedItems?
+            .filter { $0 != indexPath }
+            .forEach { collectionView.deselectItem(at: $0, animated: false) }
+        collectionView.selectItem(at: indexPath, animated: false, scrollPosition: [])
+
+        refreshVisibleSelection()
+    }
+
+    /// Pushes `selectedDate` to the visible cells.
+    ///
+    /// Cells that are dequeued later pick the state up in `cellForItemAt`, but
+    /// the ones already on screen are only reachable this way: programmatic
+    /// selection does not run `didSelect`/`didDeselect`.
+    private func refreshVisibleSelection() {
+        let collectionView = calendarCollectionView
+
+        for cell in collectionView.visibleCells {
+            guard let calendarCell = cell as? (any HaruCalendarCell),
+                  let indexPath = collectionView.indexPath(for: cell),
+                  let date = date(for: indexPath) else { continue }
+
+            calendarCell.setCalendarSelected(calendar.isDate(date, inSameDayAs: selectedDate))
+        }
+    }
+
+    /// Pages the grid to `date` without reporting the resulting page change.
+    ///
+    /// A programmatic selection already tells the caller where the calendar
+    /// went, so echoing it back through `calendarCurrentPageDidChange(_:)`
+    /// would feed the caller's own state back to it.
+    private func scrollToPage(of date: Date, animated: Bool) {
+        guard let section = indexPath(for: date, scope: scope)?.section,
+              let page = page(for: section) else { return }
+
+        currentPage = page
+
+        // Before the first reload there is nothing to scroll; `reloadCalendar()`
+        // scrolls to `currentPage` once the grid is loaded.
+        let collectionView = calendarCollectionView
+        guard collectionView.numberOfSections > section,
+              collectionView.currentSection != section else { return }
+
+        // A non-animated offset change never calls back, so only the animated
+        // path needs suppressing.
+        isSuppressingPageChange = animated
+        collectionView.scrollToSection(section, animated: animated)
     }
 }
 
 public extension HaruCalendarView {
-    
+
+    /// Selects `date` programmatically.
+    ///
+    /// Unlike a tap, this reports nothing back through the delegate — neither
+    /// `didSelect` nor `calendarCurrentPageDidChange`. The caller already knows
+    /// which date it asked for, so echoing it back is how selection ends up
+    /// fighting the caller's own state.
+    ///
+    /// Safe to call before the calendar has loaded: the pending reload picks
+    /// the selection and the page up.
+    /// - Parameters:
+    ///   - date: The date to select. Only the day is significant.
+    ///   - scrollToDate: Whether to page the grid to the date. Defaults to `true`.
+    ///   - animated: Whether that paging is animated. Defaults to `true`.
+    func select(_ date: Date, scrollToDate: Bool = true, animated: Bool = true) {
+        guard isDateInRange(date) else { return }
+
+        selectedDate = calendar.startOfDay(for: date)
+
+        if scrollToDate {
+            scrollToPage(of: selectedDate, animated: animated)
+        }
+
+        syncSelection()
+    }
+
     func reloadCalendar(for page: Date? = nil) {
         reloadSections()
         calendarCollectionView.reloadData()
@@ -321,7 +408,7 @@ extension HaruCalendarView: UICollectionViewDataSource {
         // mutating the collection view's selection while it is asking for a
         // cell can make UIKit drop cells mid-scroll. Selection is synced in
         // syncSelection() after reloads instead.
-        calendarCell.setCalendarSelected(date == selectedDate)
+        calendarCell.setCalendarSelected(calendar.isDate(date, inSameDayAs: selectedDate))
 
         return calendarCell
     }
@@ -354,7 +441,7 @@ extension HaruCalendarView: UICollectionViewDelegate {
     
     public func collectionView(_ collectionView: UICollectionView, shouldDeselectItemAt indexPath: IndexPath) -> Bool {
         guard let date = date(for: indexPath) else { return false }
-        guard selectedDate != date else { return false }
+        guard !calendar.isDate(date, inSameDayAs: selectedDate) else { return false }
         let monthPosition = monthPosition(for: indexPath)
         return delegate?.calendar(self, shouldDeselect: date, at: monthPosition) ?? true
     }
@@ -389,9 +476,13 @@ extension HaruCalendarView: UICollectionViewDelegate {
     }
     
     public func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
+        let wasSuppressed = isSuppressingPageChange
+        isSuppressingPageChange = false
+
         let section = calendarCollectionView.currentSection
         if let date = page(for: section) {
             currentPage = date
+            guard !wasSuppressed else { return }
             delegate?.calendarCurrentPageDidChange(self)
         }
     }

@@ -189,6 +189,23 @@ Implement `HaruCalendarViewDelegate`:
 - `calendar(_:didSelect:at:)` - handle selection
 - `calendarCurrentPageDidChange(_:)` - page scroll events
 
+`selectedDate` is normalized to the start of the day and every comparison against
+it is day-granular, so a `Date` carrying a time component still matches its cell.
+
+Selecting from outside (a "today" button, state pushed down from SwiftUI):
+
+```swift
+calendarView.select(date)                              // pages to the date, animated
+calendarView.select(date, scrollToDate: false)         // selection only
+```
+
+`select(_:scrollToDate:animated:)` deliberately reports **nothing** back — no
+`didSelect`, and no `calendarCurrentPageDidChange` for the scroll it starts.
+The caller already knows the date it passed in; echoing it back is what makes a
+one-way data flow (SwiftUI, Redux-ish stores) loop on itself. It is also safe to
+call before the calendar has loaded: the pending `reloadCalendar()` picks up both
+the selection and `currentPage`.
+
 ## Important Constraints
 
 - **Never skip layout preparation** in week→month transitions - `prepareWeekToMonthTransition(from:)` must run first

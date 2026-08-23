@@ -83,9 +83,13 @@ extension HaruCalendarCollectionView {
     public var currentSection: Int {
         guard let layout = collectionViewLayout as? HaruCalendarCollectionViewLayout else { return 0 }
         
+        // Guard the divisor: before the first layout the bounds are empty and
+        // `Int(Double.nan)` traps.
         if layout.scrollDirection == .horizontal {
+            guard bounds.width > 0 else { return 0 }
             return max(0, Int(round(contentOffset.x / bounds.width)))
         } else {
+            guard bounds.height > 0 else { return 0 }
             return max(0, Int(round(contentOffset.y / bounds.height)))
         }
     }
